@@ -36,10 +36,10 @@ const getAssignedOrders = async (req, res) => {
         });
     } catch (error) {
         console.error('Get assigned orders error:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Error fetching orders', 
-            error: error.message 
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching orders',
+            error: error.message
         });
     }
 };
@@ -55,17 +55,17 @@ const updateDeliveryLocation = async (req, res) => {
         const order = await Order.findByPk(orderId);
 
         if (!order) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'Order not found' 
+            return res.status(404).json({
+                success: false,
+                message: 'Order not found'
             });
         }
 
         // Verify delivery person is assigned to this order
         if (order.delivery_person_id !== req.user.id) {
-            return res.status(403).json({ 
-                success: false, 
-                message: 'Not authorized to update this order' 
+            return res.status(403).json({
+                success: false,
+                message: 'Not authorized to update this order'
             });
         }
 
@@ -94,10 +94,10 @@ const updateDeliveryLocation = async (req, res) => {
         });
     } catch (error) {
         console.error('Update location error:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Error updating location', 
-            error: error.message 
+        res.status(500).json({
+            success: false,
+            message: 'Error updating location',
+            error: error.message
         });
     }
 };
@@ -120,24 +120,24 @@ const markAsDelivered = async (req, res) => {
         });
 
         if (!order) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'Order not found' 
+            return res.status(404).json({
+                success: false,
+                message: 'Order not found'
             });
         }
 
         // Verify delivery person is assigned
         if (order.delivery_person_id !== req.user.id) {
-            return res.status(403).json({ 
-                success: false, 
-                message: 'Not authorized' 
+            return res.status(403).json({
+                success: false,
+                message: 'Not authorized'
             });
         }
 
         // Update order status
-        await order.update({ 
+        await order.update({
             status: 'delivered',
-            delivered_at: new Date()
+            actual_delivery_time: new Date()
         });
 
         // Create tracking entry
@@ -163,10 +163,10 @@ const markAsDelivered = async (req, res) => {
         });
     } catch (error) {
         console.error('Mark delivered error:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Error updating delivery status', 
-            error: error.message 
+        res.status(500).json({
+            success: false,
+            message: 'Error updating delivery status',
+            error: error.message
         });
     }
 };
@@ -208,21 +208,21 @@ const getDeliveryStats = async (req, res) => {
             where: {
                 delivery_person_id: req.user.id,
                 status: 'delivered',
-                delivered_at: {
+                actual_delivery_time: {
                     [Op.not]: null
                 }
             },
             attributes: [
                 'id',
                 'created_at',
-                'delivered_at'
+                'actual_delivery_time'
             ]
         });
 
         let avgDeliveryTime = 0;
         if (deliveredOrders.length > 0) {
             const totalTime = deliveredOrders.reduce((sum, order) => {
-                const deliveryTime = new Date(order.delivered_at) - new Date(order.created_at);
+                const deliveryTime = new Date(order.actual_delivery_time) - new Date(order.created_at);
                 return sum + deliveryTime;
             }, 0);
             avgDeliveryTime = totalTime / deliveredOrders.length / (1000 * 60); // Convert to minutes
@@ -240,10 +240,10 @@ const getDeliveryStats = async (req, res) => {
         });
     } catch (error) {
         console.error('Get delivery stats error:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Error fetching stats', 
-            error: error.message 
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching stats',
+            error: error.message
         });
     }
 };

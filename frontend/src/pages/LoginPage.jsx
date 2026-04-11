@@ -226,7 +226,7 @@ const LoginForm = ({ onSwitch }) => {
     return e;
   };
 
-   const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const validationErrors = validate();
     if (Object.keys(validationErrors).length) {
@@ -242,7 +242,13 @@ const LoginForm = ({ onSwitch }) => {
     if (success) {
       // Get the referrer or check if we came from checkout
       const from = new URLSearchParams(window.location.search).get('from');
-      navigate(from || "/checkout");
+      // Check if user is admin and redirect accordingly
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (user?.role === 'admin') {
+        navigate(from || "/admin");
+      } else {
+        navigate(from || "/checkout");
+      }
     }
   };
 

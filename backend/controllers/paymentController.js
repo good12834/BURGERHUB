@@ -118,7 +118,8 @@ const confirmPayment = async (req, res) => {
             if (order) {
                 await order.update({
                     payment_status: 'paid',
-                    status: 'confirmed'
+                    status: 'confirmed',
+                    payment_id: paymentIntentId
                 });
 
                 // Emit payment confirmation event
@@ -189,7 +190,8 @@ const handleWebhook = async (req, res) => {
                 if (order) {
                     await order.update({
                         payment_status: 'paid',
-                        status: 'confirmed'
+                        status: 'confirmed',
+                        payment_id: paymentIntent.id
                     });
 
                     // Add delivery tracking
@@ -227,12 +229,21 @@ const handleWebhook = async (req, res) => {
 
                 const newOrder = await Order.create({
                     user_id: userId || 1,
+                    order_number: 'ORD' + Date.now(),
+                    subtotal: totalAmount,
+                    tax_amount: 0,
+                    delivery_fee: 0,
+                    discount_amount: 0,
                     total_amount: totalAmount,
                     payment_status: 'paid',
                     status: 'confirmed',
                     payment_method: 'stripe',
+                    payment_id: fullSession.payment_intent || null,
                     delivery_address: deliveryAddress,
-                    delivery_instructions: metadata.delivery_instructions || null
+                    delivery_instructions: metadata.delivery_instructions || null,
+                    customer_name: metadata.customer_name || 'Customer',
+                    customer_email: metadata.customer_email || 'customer@example.com',
+                    customer_phone: metadata.customer_phone || null
                 });
 
                 // Create order items

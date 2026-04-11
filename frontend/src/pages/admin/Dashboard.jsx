@@ -1,32 +1,43 @@
 import { useState, useEffect } from "react";
+import {
+  MdReceipt,
+  MdAttachMoney,
+  MdPeople,
+  MdAccessTime,
+  MdFastfood,
+  MdRestaurant,
+  MdLocalFireDepartment,
+  MdGrass,
+  MdCookie
+} from "react-icons/md";
 
 /* ─── Mock Data ──────────────────────────────────────────────────────── */
 const WEEKLY_REVENUE = [1200, 1900, 1400, 2100, 2800, 3500, 3100];
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 const ORDER_STATUSES = [
-  { label: "Delivered",    count: 84, color: "#22C55E" },
-  { label: "Preparing",   count: 23, color: "#F59E0B" },
-  { label: "On the Way",  count: 12, color: "#60A5FA" },
-  { label: "Pending",     count: 8,  color: "#F97316" },
-  { label: "Cancelled",   count: 4,  color: "#EF4444" },
+  { label: "Delivered", count: 84, color: "#22C55E" },
+  { label: "Preparing", count: 23, color: "#F59E0B" },
+  { label: "On the Way", count: 12, color: "#60A5FA" },
+  { label: "Pending", count: 8, color: "#F97316" },
+  { label: "Cancelled", count: 4, color: "#EF4444" },
 ];
 
 const TOP_PRODUCTS = [
-  { name: "Truffle Royale",  sold: 312, revenue: 5311.88, emoji: "🍔", trend: +14 },
-  { name: "Bacon Overload",  sold: 287, revenue: 4013.13, emoji: "🥓", trend: +8  },
-  { name: "OG Classic",      sold: 241, revenue: 2165.59, emoji: "🍔", trend: +3  },
-  { name: "Truffle Fries",   sold: 198, revenue: 1384.02, emoji: "🍟", trend: -2  },
-  { name: "Inferno BBQ",     sold: 176, revenue: 2286.24, emoji: "🌶️", trend: +19 },
+  { name: "Truffle Royale", sold: 312, revenue: 5311.88, icon: <MdFastfood />, trend: +14 },
+  { name: "Bacon Overload", sold: 287, revenue: 4013.13, icon: <MdRestaurant />, trend: +8 },
+  { name: "OG Classic", sold: 241, revenue: 2165.59, icon: <MdFastfood />, trend: +3 },
+  { name: "Truffle Fries", sold: 198, revenue: 1384.02, icon: <MdLocalFireDepartment />, trend: -2 },
+  { name: "Inferno BBQ", sold: 176, revenue: 2286.24, icon: <MdLocalFireDepartment />, trend: +19 },
 ];
 
 const RECENT_ORDERS = [
-  { id: "BH-20482", customer: "Alex R.",    items: 3, total: 47.97, status: "delivered",   time: "2 min ago" },
-  { id: "BH-20481", customer: "Lena K.",    items: 2, total: 29.98, status: "on_the_way",  time: "8 min ago" },
-  { id: "BH-20480", customer: "Omar S.",    items: 4, total: 61.96, status: "preparing",   time: "14 min ago"},
-  { id: "BH-20479", customer: "Dana M.",    items: 1, total: 16.99, status: "pending",     time: "19 min ago"},
-  { id: "BH-20478", customer: "Tom H.",     items: 2, total: 22.98, status: "delivered",   time: "24 min ago"},
-  { id: "BH-20477", customer: "Sara L.",    items: 5, total: 74.95, status: "cancelled",   time: "31 min ago"},
+  { id: "BH-20482", customer: "Alex R.", items: 3, total: 47.97, status: "delivered", time: "2 min ago" },
+  { id: "BH-20481", customer: "Lena K.", items: 2, total: 29.98, status: "on_the_way", time: "8 min ago" },
+  { id: "BH-20480", customer: "Omar S.", items: 4, total: 61.96, status: "preparing", time: "14 min ago" },
+  { id: "BH-20479", customer: "Dana M.", items: 1, total: 16.99, status: "pending", time: "19 min ago" },
+  { id: "BH-20478", customer: "Tom H.", items: 2, total: 22.98, status: "delivered", time: "24 min ago" },
+  { id: "BH-20477", customer: "Sara L.", items: 5, total: 74.95, status: "cancelled", time: "31 min ago" },
 ];
 
 /* ─── Components ─────────────────────────────────────────────────────── */
@@ -160,10 +171,10 @@ export default function AdminDashboard() {
         {/* Stats */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
           {[
-            { icon: "🧾", label: "Orders Today",    value: 124, trend: +12, color: "#60A5FA", delay: 0   },
-            { icon: "💰", label: "Revenue Today",   value: 3100, prefix: "$", trend: +8, color: "#22C55E", delay: 80  },
-            { icon: "👥", label: "Active Customers",value: 2341, trend: +15, color: "#A78BFA", delay: 160 },
-            { icon: "⏳", label: "Pending Orders",  value: 8,    color: "#F97316", delay: 240 },
+            { icon: <MdReceipt />, label: "Orders Today", value: 124, trend: +12, color: "#60A5FA", delay: 0 },
+            { icon: <MdAttachMoney />, label: "Revenue Today", value: 3100, prefix: "$", trend: +8, color: "#22C55E", delay: 80 },
+            { icon: <MdPeople />, label: "Active Customers", value: 2341, trend: +15, color: "#A78BFA", delay: 160 },
+            { icon: <MdAccessTime />, label: "Pending Orders", value: 8, color: "#F97316", delay: 240 },
           ].map(s => <StatCard key={s.label} {...s} run={run} />)}
         </div>
 
@@ -182,7 +193,7 @@ export default function AdminDashboard() {
               {TOP_PRODUCTS.map((p, i) => (
                 <div key={p.name} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 10, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
                   <div style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Bebas Neue', sans-serif", fontSize: 13, color: "#F59E0B", flexShrink: 0 }}>{i + 1}</div>
-                  <span style={{ fontSize: 18, flexShrink: 0 }}>{p.emoji}</span>
+                  <span style={{ fontSize: 18, flexShrink: 0, color: "#F59E0B" }}>{p.icon}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 13, color: "#F5F5F4", letterSpacing: "0.04em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
                     <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: "#44403C" }}>{p.sold} sold</div>

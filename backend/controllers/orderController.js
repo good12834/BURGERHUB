@@ -93,6 +93,7 @@ const createOrder = async (req, res) => {
             user_id: req.user.id,
             order_number: `ORD${Date.now().toString().slice(-10)}`, // Will be overridden by trigger if using MySQL
             subtotal,
+            tax_amount: 0, // Tax calculation can be added later
             delivery_fee: deliveryFee,
             discount_amount: discount_amount || 0,
             coupon_code,
@@ -221,7 +222,8 @@ const getUserOrders = async (req, res) => {
 // @access  Private
 const getOrderById = async (req, res) => {
     try {
-        const order = await Order.findByPk(req.params.id, {
+        const order = await Order.findOne({
+            where: { order_number: req.params.id },
             include: [
                 {
                     model: OrderItem,
@@ -274,7 +276,8 @@ const getOrderById = async (req, res) => {
 const updateOrderStatus = async (req, res) => {
     try {
         const { status, notes, location } = req.body;
-        const order = await Order.findByPk(req.params.id, {
+        const order = await Order.findOne({
+            where: { order_number: req.params.id },
             include: [
                 {
                     model: User,
@@ -350,7 +353,7 @@ const updateOrderStatus = async (req, res) => {
 // @access  Private
 const cancelOrder = async (req, res) => {
     try {
-        const order = await Order.findByPk(req.params.id);
+        const order = await Order.findOne({ where: { order_number: req.params.id } });
 
         if (!order) {
             return res.status(404).json({
@@ -412,7 +415,7 @@ const cancelOrder = async (req, res) => {
 // @access  Private
 const getOrderTracking = async (req, res) => {
     try {
-        const order = await Order.findByPk(req.params.id);
+        const order = await Order.findOne({ where: { order_number: req.params.id } });
 
         if (!order) {
             return res.status(404).json({

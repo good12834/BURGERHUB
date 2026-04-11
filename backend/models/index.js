@@ -5,6 +5,7 @@ const Order = require('./Order');
 const OrderItem = require('./OrderItem');
 const DeliveryTracking = require('./DeliveryTracking');
 const CustomizationOption = require('./CustomizationOption');
+const Driver = require('./Driver');
 
 // Relationships
 Product.belongsTo(Category, { foreignKey: 'category_id', as: 'category' });
@@ -26,6 +27,13 @@ DeliveryTracking.belongsTo(User, { foreignKey: 'updated_by', as: 'updater' });
 OrderItem.belongsTo(Product, { foreignKey: 'product_id' });
 Product.hasMany(OrderItem, { foreignKey: 'product_id' });
 
+// Driver relationships
+Driver.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+User.hasOne(Driver, { foreignKey: 'user_id', as: 'driver' });
+
+Order.belongsTo(Driver, { foreignKey: 'delivery_person_id', as: 'driver' });
+Driver.hasMany(Order, { foreignKey: 'delivery_person_id', as: 'orders' });
+
 module.exports = {
     User,
     Product,
@@ -33,5 +41,6 @@ module.exports = {
     Order,
     OrderItem,
     DeliveryTracking,
-    CustomizationOption
+    CustomizationOption,
+    Driver
 };

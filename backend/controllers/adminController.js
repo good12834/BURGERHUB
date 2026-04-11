@@ -1,4 +1,4 @@
-const { Order, User, Product, OrderItem } = require('../models');
+const { Order, User, Product, OrderItem, Driver } = require('../models');
 const { Op, Sequelize } = require('sequelize');
 const sequelize = require('../config/database');
 // @desc    Get dashboard statistics
@@ -8,8 +8,7 @@ const getDashboardStats = async (req, res) => {
     try {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-
-      const thisWeek = new Date(today);
+        const thisWeek = new Date(today);
         thisWeek.setDate(thisWeek.getDate() - 7);
 
         const thisMonth = new Date(today);
@@ -20,7 +19,7 @@ const getDashboardStats = async (req, res) => {
         const totalUsers = await User.count({ where: { role: 'customer' } });
         const totalProducts = await Product.count();
         const pendingOrders = await Order.count({ where: { status: 'pending' } });
-        
+
         // Today's stats
         const todayOrders = await Order.count({
             where: {
@@ -127,10 +126,10 @@ const getDashboardStats = async (req, res) => {
         });
     } catch (error) {
         console.error('Dashboard stats error:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Error fetching dashboard stats', 
-            error: error.message 
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching dashboard stats',
+            error: error.message
         });
     }
 };
@@ -140,17 +139,19 @@ const getDashboardStats = async (req, res) => {
 // @access  Private/Admin
 const getAllOrders = async (req, res) => {
     try {
-        const { 
-            status, 
-            payment_status, 
-            start_date, 
+        console.log('getAllOrders called with query:', req.query);
+        const {
+            status,
+            payment_status,
+            start_date,
             end_date,
             search,
-            page = 1, 
-            limit = 20 
+            page = 1,
+            limit = 20
         } = req.query;
 
         const whereConditions = {};
+        console.log('Initial whereConditions:', whereConditions);
 
         if (status) {
             whereConditions.status = status;
@@ -170,46 +171,35 @@ const getAllOrders = async (req, res) => {
             }
         }
 
+        console.log('Final whereConditions:', whereConditions);
         const offset = (page - 1) * limit;
+        console.log('Offset:', offset, 'Limit:', limit);
 
-        const orders = await Order.findAndCountAll({
+        const total = await Order.count({ where: whereConditions });
+        const orders = await Order.findAll({
             where: whereConditions,
-            include: [
-                {
-                    model: User,
-                    attributes: ['id', 'name', 'email', 'phone'],
-                    where: search ? {
-                        [Op.or]: [
-                            { name: { [Op.like]: `%${search}%` } },
-                            { email: { [Op.like]: `%${search}%` } }
-                        ]
-                    } : undefined
-                },
-                {
-                    model: OrderItem,
-                    as: 'items'
-                }
-            ],
             order: [['created_at', 'DESC']],
             limit: parseInt(limit),
             offset: parseInt(offset)
         });
 
+        console.log('Orders fetched successfully, count:', total);
+
         res.json({
             success: true,
             data: {
-                orders: orders.rows,
-                total: orders.count,
+                orders,
+                total,
                 page: parseInt(page),
-                totalPages: Math.ceil(orders.count / limit)
+                totalPages: Math.ceil(total / limit)
             }
         });
     } catch (error) {
         console.error('Get all orders error:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Error fetching orders', 
-            error: error.message 
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching orders',
+            error: error.message
         });
     }
 };
@@ -219,11 +209,11 @@ const getAllOrders = async (req, res) => {
 // @access  Private/Admin
 const getAllUsers = async (req, res) => {
     try {
-        const { 
-            role, 
+        const {
+            role,
             search,
-            page = 1, 
-            limit = 20 
+            page = 1,
+            limit = 20
         } = req.query;
 
         const whereConditions = {};
@@ -274,10 +264,10 @@ const getAllUsers = async (req, res) => {
         });
     } catch (error) {
         console.error('Get all users error:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Error fetching users', 
-            error: error.message 
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching users',
+            error: error.message
         });
     }
 };
@@ -288,28 +278,28 @@ const getAllUsers = async (req, res) => {
 const updateUserRole = async (req, res) => {
     try {
         const { role } = req.body;
-        
+
         if (!['customer', 'admin', 'delivery'].includes(role)) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Invalid role' 
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid role'
             });
         }
 
         const user = await User.findByPk(req.params.id);
 
         if (!user) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'User not found' 
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
             });
         }
 
         // Prevent admin from changing their own role
         if (user.id === req.user.id) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Cannot change your own role' 
+            return res.status(400).json({
+                success: false,
+                message: 'Cannot change your own role'
             });
         }
 
@@ -327,10 +317,10 @@ const updateUserRole = async (req, res) => {
         });
     } catch (error) {
         console.error('Update user role error:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Error updating user role', 
-            error: error.message 
+        res.status(500).json({
+            success: false,
+            message: 'Error updating user role',
+            error: error.message
         });
     }
 };
@@ -346,7 +336,7 @@ const getSalesReport = async (req, res) => {
         const endDate = end_date ? new Date(end_date) : new Date();
 
         let groupFormat;
-        switch(group_by) {
+        switch (group_by) {
             case 'hour':
                 groupFormat = '%Y-%m-%d %H:00:00';
                 break;
@@ -421,10 +411,10 @@ const getSalesReport = async (req, res) => {
         });
     } catch (error) {
         console.error('Sales report error:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Error generating sales report', 
-            error: error.message 
+        res.status(500).json({
+            success: false,
+            message: 'Error generating sales report',
+            error: error.message
         });
     }
 };

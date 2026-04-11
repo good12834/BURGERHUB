@@ -4,12 +4,12 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 
 dotenv.config();
+// Import models to set up associations
+require('./models/index');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
-
 // Middleware
-
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -28,6 +28,7 @@ const paymentRoutes = require('./routes/payment.routes');
 const adminRoutes = require('./routes/admin.routes');
 const favoritesRoutes = require('./routes/favorites.routes');
 const deliveryRoutes = require('./routes/delivery.routes');
+const driverRoutes = require('./routes/driver.routes');
 
 // Sync database (create tables if they don't exist)
 const sequelize = require('./config/database');
@@ -46,6 +47,7 @@ app.use('/api/payment', paymentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/favorites', favoritesRoutes);
 app.use('/api/delivery', deliveryRoutes);
+app.use('/api/admin/drivers', driverRoutes);
 
 // Test route
 app.get('/test', (req, res) => {
@@ -64,7 +66,8 @@ app.get('/', (req, res) => {
             orders: '/api/orders',
             payment: '/api/payment',
             admin: '/api/admin',
-            favorites: '/api/favorites'
+            favorites: '/api/favorites',
+            drivers: '/api/admin/drivers'
         }
     });
 });

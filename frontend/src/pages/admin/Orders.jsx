@@ -10,20 +10,25 @@ import {
   MdCheckCircle,
   MdCancel,
   MdEdit,
-  MdDelete
+  MdDelete,
+  MdFastfood,
+  MdLocalFireDepartment,
+  MdLocalDrink,
+  MdStar,
+  MdGrass,
+  MdCookie,
+  MdLocationOn,
+  MdPerson,
+  MdSearch,
+  MdRefresh,
+  MdVisibility,
+  MdList
 } from "react-icons/md";
+import axios from "axios";
 
-/* ─── Mock orders ────────────────────────────────────────────────────── */
-const MOCK_ORDERS = [
-  { id: 1, order_number: "BH-20482", customer: { name: "Alex R.", email: "alex@email.com", avatar: "AR" }, items: [{ emoji: "🍔", name: "Truffle Royale", qty: 1, price: 16.99 }, { emoji: "🍟", name: "Truffle Fries", qty: 2, price: 6.99 }], total: 47.97, status: "on_the_way", payment: "card", address: "14 Jaffa Rd, Jerusalem", created_at: new Date(Date.now() - 2 * 60000), driver: "Daniel M." },
-  { id: 2, order_number: "BH-20481", customer: { name: "Lena K.", email: "lena@email.com", avatar: "LK" }, items: [{ emoji: "🥓", name: "Bacon Overload", qty: 2, price: 13.99 }], total: 29.98, status: "preparing", payment: "paypal", address: "3 Herzl St, Tel Aviv", created_at: new Date(Date.now() - 8 * 60000), driver: null },
-  { id: 3, order_number: "BH-20480", customer: { name: "Omar S.", email: "omar@email.com", avatar: "OS" }, items: [{ emoji: "🌶️", name: "Inferno BBQ", qty: 1, price: 12.99 }, { emoji: "🥤", name: "Shake", qty: 1, price: 5.99 }], total: 18.98, status: "pending", payment: "cash", address: "7 Ben Yehuda, Haifa", created_at: new Date(Date.now() - 14 * 60000), driver: null },
-  { id: 4, order_number: "BH-20479", customer: { name: "Dana M.", email: "dana@email.com", avatar: "DM" }, items: [{ emoji: "✨", name: "Truffle Royale", qty: 1, price: 16.99 }], total: 16.99, status: "delivered", payment: "card", address: "22 Allenby, Tel Aviv", created_at: new Date(Date.now() - 24 * 60000), driver: "Sara L." },
-  { id: 5, order_number: "BH-20478", customer: { name: "Tom H.", email: "tom@email.com", avatar: "TH" }, items: [{ emoji: "🍔", name: "OG Classic", qty: 2, price: 8.99 }, { emoji: "🧅", name: "Onion Rings", qty: 1, price: 5.49 }], total: 23.47, status: "delivered", payment: "apple", address: "9 Dizengoff, Tel Aviv", created_at: new Date(Date.now() - 32 * 60000), driver: "Yoni K." },
-  { id: 6, order_number: "BH-20477", customer: { name: "Sara L.", email: "sara@email.com", avatar: "SL" }, items: [{ emoji: "🌿", name: "The Garden", qty: 3, price: 10.99 }, { emoji: "🍟", name: "Sweet Potato", qty: 2, price: 5.99 }], total: 44.95, status: "cancelled", payment: "card", address: "5 HaYarkon, Tel Aviv", created_at: new Date(Date.now() - 45 * 60000), driver: null },
-  { id: 7, order_number: "BH-20476", customer: { name: "James P.", email: "james@email.com", avatar: "JP" }, items: [{ emoji: "🥓", name: "Bacon Overload", qty: 1, price: 13.99 }, { emoji: "🍫", name: "Lava Brownie", qty: 1, price: 6.99 }], total: 20.98, status: "delivered", payment: "card", address: "11 Rothschild, Tel Aviv", created_at: new Date(Date.now() - 60 * 60000), driver: "Daniel M." },
-];
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
+/* ─── Status Configuration ────────────────────────────────────────────── */
 const STATUS_CFG = {
   pending: { color: "#F97316", bg: "rgba(249,115,22,0.1)", border: "rgba(249,115,22,0.25)", label: "Pending", icon: <MdAccessTime /> },
   preparing: { color: "#F59E0B", bg: "rgba(245,158,11,0.1)", border: "rgba(245,158,11,0.25)", label: "Preparing", icon: <MdRestaurant /> },
@@ -37,7 +42,8 @@ const PAYMENT_CFG = {
   card: { icon: <MdCreditCard />, label: "Card" },
   paypal: { icon: <MdPayment />, label: "PayPal" },
   apple: { icon: <MdSmartphone />, label: "Apple" },
-  cash: { icon: <MdAttachMoney />, label: "Cash" }
+  cash: { icon: <MdAttachMoney />, label: "Cash" },
+  stripe: { icon: <MdCreditCard />, label: "Card" }
 };
 
 const timeAgo = (date) => {
@@ -105,10 +111,10 @@ const OrderDrawer = ({ order, onClose, onStatusChange }) => {
             )}
           </div>
           <div><SectionLabel>Customer</SectionLabel><div style={{ display: "flex", gap: 12, alignItems: "center" }}><Avatar initials={order.customer.avatar} size={40} /><div><div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 15, color: "#F5F5F4", letterSpacing: "0.04em" }}>{order.customer.name}</div><div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: "#57534E" }}>{order.customer.email}</div></div></div></div>
-          <div><SectionLabel>Delivery Address</SectionLabel><div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: "#A8A29E", lineHeight: 1.5 }}>📍 {order.address}</div>{order.driver && (<div style={{ marginTop: 8, fontFamily: "'Barlow', sans-serif", fontSize: 13, color: "#A8A29E" }}>🛵 Driver: <span style={{ color: "#F5F5F4", fontWeight: 500 }}>{order.driver}</span></div>)}</div>
-          <div><SectionLabel>Order Items</SectionLabel><div style={{ display: "flex", flexDirection: "column", gap: 8 }}>{order.items.map((item, i) => (<div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10 }}><span style={{ fontSize: 22, flexShrink: 0 }}>{item.emoji}</span><div style={{ flex: 1 }}><div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 13, color: "#F5F5F4", letterSpacing: "0.04em" }}>{item.name}</div><div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: "#44403C" }}>× {item.qty}</div></div><div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 17, color: "#F59E0B", letterSpacing: "0.03em" }}>${(item.price * item.qty).toFixed(2)}</div></div>))}</div></div>
+          <div><SectionLabel>Delivery Address</SectionLabel><div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: "#A8A29E", lineHeight: 1.5 }}><MdLocationOn style={{ verticalAlign: 'middle', marginRight: 4 }} /> {order.address}</div></div>
+          <div><SectionLabel>Order Items</SectionLabel><div style={{ display: "flex", flexDirection: "column", gap: 8 }}>{order.items.map((item, i) => (<div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10 }}><span style={{ fontSize: 22, flexShrink: 0, color: "#F59E0B" }}>{item.icon}</span><div style={{ flex: 1 }}><div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 13, color: "#F5F5F4", letterSpacing: "0.04em" }}>{item.name}</div><div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 11, color: "#44403C" }}>× {item.qty}</div></div><div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 17, color: "#F59E0B", letterSpacing: "0.03em" }}>${(item.price * item.qty).toFixed(2)}</div></div>))}</div></div>
           <div><SectionLabel>Payment</SectionLabel><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10 }}><div style={{ display: "flex", gap: 8, alignItems: "center" }}><span style={{ fontSize: 18 }}>{PAYMENT_CFG[order.payment]?.icon}</span><span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 13, color: "#A8A29E", letterSpacing: "0.06em" }}>{PAYMENT_CFG[order.payment]?.label}</span></div><div><div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, color: "#F59E0B", letterSpacing: "0.03em" }}>${order.total.toFixed(2)}</div></div></div></div>
-          {order.status === "pending" && (<button onClick={() => { onStatusChange(order.id, "preparing"); onClose(); }} style={{ width: "100%", background: "linear-gradient(135deg,#F59E0B,#D97706)", color: "#1C1917", border: "none", cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: 15, letterSpacing: "0.1em", textTransform: "uppercase", padding: "13px", borderRadius: 12 }}>👨‍🍳 Accept & Start Preparing</button>)}
+          {order.status === "pending" && (<button onClick={() => { onStatusChange(order.id, "preparing"); onClose(); }} style={{ width: "100%", background: "linear-gradient(135deg,#F59E0B,#D97706)", color: "#1C1917", border: "none", cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: 15, letterSpacing: "0.1em", textTransform: "uppercase", padding: "13px", borderRadius: 12 }}><MdRestaurant style={{ verticalAlign: 'middle', marginRight: 8 }} /> Accept & Start Preparing</button>)}
         </div>
       </div>
     </>
@@ -116,7 +122,7 @@ const OrderDrawer = ({ order, onClose, onStatusChange }) => {
 };
 
 const StatPill = ({ status, count, active, onClick }) => {
-  const cfg = STATUS_CFG[status] || { color: "#78716C", bg: "rgba(120,113,108,0.1)", border: "rgba(120,113,108,0.15)", label: "All", icon: "📋" };
+  const cfg = STATUS_CFG[status] || { color: "#78716C", bg: "rgba(120,113,108,0.1)", border: "rgba(120,113,108,0.15)", label: "All", icon: <MdList /> };
   return (
     <button onClick={onClick} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 16px", borderRadius: 10, background: active ? cfg.bg : "rgba(255,255,255,0.03)", border: `1px solid ${active ? cfg.border : "rgba(255,255,255,0.07)"}`, cursor: "pointer", whiteSpace: "nowrap" }}>
       <span style={{ fontSize: 14 }}>{cfg.icon}</span><span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: active ? cfg.color : "#57534E" }}>{cfg.label}</span><span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 15, color: active ? cfg.color : "#3D3632", background: active ? `${cfg.color}20` : "rgba(255,255,255,0.05)", padding: "0 7px", borderRadius: 999 }}>{count}</span>
@@ -126,24 +132,158 @@ const StatPill = ({ status, count, active, onClick }) => {
 
 /* ─── Main Admin Orders ────────────────────────────────────────────── */
 export default function AdminOrders() {
-  const [orders, setOrders] = useState(MOCK_ORDERS);
+  const [orders, setOrders] = useState([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [drawerOrder, setDrawerOrder] = useState(null);
   const [sortBy, setSortBy] = useState("newest");
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const updateStatus = (id, status) => setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
-  const handleRefresh = async () => { setRefreshing(true); await new Promise(r => setTimeout(r, 600)); setRefreshing(false); };
+  // Fetch orders from backend
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_BASE}/api/admin/orders`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (response.data.success) {
+        // Transform backend data to match frontend structure
+        const transformedOrders = response.data.data.orders.map(order => {
+          // Map backend status to frontend status
+          let frontendStatus = order.status;
+          if (order.status === 'confirmed') frontendStatus = 'preparing';
+          else if (order.status === 'ready') frontendStatus = 'preparing';
+          else if (order.status === 'out_for_delivery') frontendStatus = 'on_the_way';
+
+          // Get initials from customer name
+          const nameParts = order.customer_name ? order.customer_name.split(' ') : ['U', 'N'];
+          const initials = nameParts.length >= 2
+            ? `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase()
+            : nameParts[0].substring(0, 2).toUpperCase();
+
+          return {
+            id: order.id,
+            order_number: order.order_number,
+            customer: {
+              name: order.customer_name || 'Unknown',
+              email: order.customer_email || 'No email',
+              avatar: initials
+            },
+            items: order.items ? order.items.map(item => ({
+              icon: <MdFastfood />,
+              name: item.product_name,
+              qty: item.quantity,
+              price: parseFloat(item.unit_price)
+            })) : [],
+            total: parseFloat(order.total_amount),
+            status: frontendStatus,
+            payment: order.payment_method || 'card',
+            address: order.delivery_address || 'No address',
+            created_at: order.created_at,
+            driver: null // Backend doesn't have driver info yet
+          };
+        });
+
+        setOrders(transformedOrders);
+      }
+    } catch (err) {
+      console.error('Error fetching orders:', err);
+      setError('Failed to load orders. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Update order status
+  const updateStatus = async (id, status) => {
+    try {
+      const token = localStorage.getItem('token');
+
+      // Map frontend status back to backend status
+      let backendStatus = status;
+      if (status === 'preparing') backendStatus = 'preparing';
+      else if (status === 'on_the_way') backendStatus = 'out_for_delivery';
+      else if (status === 'delivered') backendStatus = 'delivered';
+      else if (status === 'cancelled') backendStatus = 'cancelled';
+      else if (status === 'pending') backendStatus = 'pending';
+
+      await axios.put(`${API_BASE}/api/orders/${id}/status`,
+        { status: backendStatus },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      // Update local state
+      setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
+
+      // Update drawer if open
+      if (drawerOrder && drawerOrder.id === id) {
+        setDrawerOrder(prev => prev ? { ...prev, status } : null);
+      }
+    } catch (err) {
+      console.error('Error updating order status:', err);
+      alert('Failed to update order status. Please try again.');
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchOrders();
+    setRefreshing(false);
+  };
+
   const toggleSelect = (id) => setSelectedIds(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s; });
   const toggleAll = () => (selectedIds.size === filtered.length) ? setSelectedIds(new Set()) : setSelectedIds(new Set(filtered.map(o => o.id)));
-  const bulkUpdate = (status) => { setOrders(prev => prev.map(o => selectedIds.has(o.id) ? { ...o, status } : o)); setSelectedIds(new Set()); };
+  const bulkUpdate = (status) => {
+    selectedIds.forEach(id => updateStatus(id, status));
+    setSelectedIds(new Set());
+  };
+
+  // Fetch orders on component mount
+  useEffect(() => {
+    fetchOrders();
+  }, []);
 
   const counts = { all: orders.length, ...Object.fromEntries(Object.keys(STATUS_CFG).map(s => [s, orders.filter(o => o.status === s).length])) };
   const filtered = orders
     .filter(o => (statusFilter === "all" || o.status === statusFilter) && (search === "" || o.order_number.toLowerCase().includes(search.toLowerCase()) || o.customer.name.toLowerCase().includes(search.toLowerCase())))
     .sort((a, b) => { if (sortBy === "newest") return new Date(b.created_at) - new Date(a.created_at); if (sortBy === "highest") return b.total - a.total; return 0; });
+
+  if (loading) {
+    return (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", color: "#F59E0B" }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🍔</div>
+          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18, letterSpacing: "0.1em" }}>Loading orders...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", color: "#EF4444" }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
+          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18, letterSpacing: "0.1em", marginBottom: 16 }}>{error}</div>
+          <button onClick={fetchOrders} style={{ background: "#F59E0B", color: "#1C1917", border: "none", padding: "10px 20px", borderRadius: 8, cursor: "pointer", fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, letterSpacing: "0.1em" }}>
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ animation: "fadeIn 0.35s ease" }}>
@@ -151,18 +291,25 @@ export default function AdminOrders() {
         <div style={{ maxWidth: 1400, margin: "0 auto" }}>
           <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 16, marginBottom: 24 }}>
             <div><h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "42px", letterSpacing: "0.03em", color: "#F5F5F4" }}>Order Management</h1></div>
-            <div style={{ display: "flex", gap: 10 }}><button onClick={handleRefresh} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)", color: "#78716C", padding: "9px 16px", borderRadius: 10 }}><span style={{ animation: refreshing ? "spin 1s linear infinite" : "none", display: "inline-block" }}>↻</span> {refreshing ? "Refreshing…" : "Refresh"}</button></div>
+            <div style={{ display: "flex", gap: 10 }}><button onClick={handleRefresh} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)", color: "#78716C", padding: "9px 16px", borderRadius: 10 }}><span style={{ animation: refreshing ? "spin 1s linear infinite" : "none", display: "inline-block" }}><MdRefresh /></span> {refreshing ? "Refreshing…" : "Refresh"}</button></div>
           </div>
           <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 16 }}><StatPill status="all" count={counts.all} active={statusFilter === "all"} onClick={() => setStatusFilter("all")} />{Object.keys(STATUS_CFG).map(s => (<StatPill key={s} status={s} count={counts[s] || 0} active={statusFilter === s} onClick={() => setStatusFilter(s)} />))}</div>
         </div>
       </div>
 
       <div style={{ maxWidth: 1400, margin: "0 auto", padding: "24px 40px 60px" }}>
-        <div style={{ display: "flex", gap: 12, marginBottom: 18, alignItems: "center" }}><div style={{ position: "relative", flex: 1 }}><span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", opacity: 0.4 }}>🔍</span><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search orders…" style={{ width: "100%", padding: "10px 12px 10px 38px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 10, color: "#F5F5F4", outline: "none" }} /></div><select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 10, color: "#78716C" }}><option value="newest">Newest</option><option value="highest">Highest</option></select></div>
+        <div style={{ display: "flex", gap: 12, marginBottom: 18, alignItems: "center" }}><div style={{ position: "relative", flex: 1 }}><span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", opacity: 0.4 }}><MdSearch /></span><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search orders…" style={{ width: "100%", padding: "10px 12px 10px 38px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 10, color: "#F5F5F4", outline: "none" }} /></div><select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{ padding: "10px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 10, color: "#78716C" }}><option value="newest">Newest</option><option value="highest">Highest</option></select></div>
         {selectedIds.size > 0 && (<div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", marginBottom: 12, background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 10 }}><span style={{ color: "#F59E0B" }}>{selectedIds.size} selected</span><div style={{ width: 1, height: 16, background: "rgba(245,158,11,0.2)" }} />{["preparing", "on_the_way", "delivered", "cancelled"].map(s => (<button key={s} onClick={() => bulkUpdate(s)} style={{ color: STATUS_CFG[s].color, background: STATUS_CFG[s].bg, border: `1px solid ${STATUS_CFG[s].border}`, padding: "4px 10px", borderRadius: 999 }}>{STATUS_CFG[s].label}</button>))}<button onClick={() => setSelectedIds(new Set())} style={{ marginLeft: "auto", background: "none", border: "none", color: "#44403C" }}>✕</button></div>)}
         <div style={{ background: "#0F0D0B", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, overflow: "hidden" }}>
           <div style={{ display: "grid", gridTemplateColumns: "40px 140px 1fr 70px 100px 120px 90px 110px", padding: "11px 20px", borderBottom: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.02)", gap: 8 }}><div onClick={toggleAll} style={{ cursor: "pointer", display: "flex", justifyContent: "center" }}><div style={{ width: 16, height: 16, borderRadius: 4, background: selectedIds.size === filtered.length && filtered.length > 0 ? "#F59E0B" : "transparent", border: "2px solid rgba(255,255,255,0.15)" }} /></div>{["Order ID", "Customer", "Items", "Total", "Status", "Payment", "Actions"].map(h => (<span key={h} style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: "#3D3632" }}>{h}</span>))}</div>
-          {filtered.map((order, i) => (<div key={order.id} style={{ display: "grid", gridTemplateColumns: "40px 140px 1fr 70px 100px 120px 90px 110px", padding: "13px 20px", borderBottom: "1px solid rgba(255,255,255,0.04)", alignItems: "center", gap: 8, background: selectedIds.has(order.id) ? "rgba(245,158,11,0.04)" : "transparent" }}><div onClick={() => toggleSelect(order.id)} style={{ cursor: "pointer", display: "flex", justifyContent: "center" }}><div style={{ width: 16, height: 16, borderRadius: 4, background: selectedIds.has(order.id) ? "#F59E0B" : "transparent", border: "2px solid rgba(255,255,255,0.12)" }} /></div><div><div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 13, color: "#F5F5F4" }}>{order.order_number}</div><div style={{ color: "#3D3632", fontSize: 11 }}>{timeAgo(order.created_at)}</div></div><div style={{ display: "flex", alignItems: "center", gap: 9 }}><Avatar initials={order.customer.avatar} size={28} /><div><div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 13, color: "#D6D3D1" }}>{order.customer.name}</div><div style={{ color: "#3D3632", fontSize: 11 }}>{order.customer.email}</div></div></div><div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, color: "#57534E" }}>{order.items.length}</div><div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: "#F59E0B" }}>${order.total.toFixed(2)}</div><StatusBadge status={order.status} /><div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ fontSize: 15 }}>{PAYMENT_CFG[order.payment]?.icon}</span><span style={{ fontSize: 11, color: "#44403C" }}>{PAYMENT_CFG[order.payment]?.label}</span></div><div style={{ display: "flex", gap: 6, alignItems: "center" }}><button onClick={() => setDrawerOrder(order)} style={{ width: 30, height: 30, borderRadius: 7, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", cursor: "pointer", color: "#44403C", display: "flex", alignItems: "center", justifyContent: "center" }}>👁</button><StatusSelect value={order.status} onChange={(s) => updateStatus(order.id, s)} /></div></div>))}
+          {filtered.length === 0 ? (
+            <div style={{ padding: 60, textAlign: "center", color: "#57534E" }}>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>📦</div>
+              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18, letterSpacing: "0.1em" }}>No orders found</div>
+            </div>
+          ) : (
+            filtered.map((order, i) => (<div key={order.id} style={{ display: "grid", gridTemplateColumns: "40px 140px 1fr 70px 100px 120px 90px 110px", padding: "13px 20px", borderBottom: "1px solid rgba(255,255,255,0.04)", alignItems: "center", gap: 8, background: selectedIds.has(order.id) ? "rgba(245,158,11,0.04)" : "transparent" }}><div onClick={() => toggleSelect(order.id)} style={{ cursor: "pointer", display: "flex", justifyContent: "center" }}><div style={{ width: 16, height: 16, borderRadius: 4, background: selectedIds.has(order.id) ? "#F59E0B" : "transparent", border: "2px solid rgba(255,255,255,0.12)" }} /></div><div><div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 13, color: "#F5F5F4" }}>{order.order_number}</div><div style={{ color: "#3D3632", fontSize: 11 }}>{timeAgo(order.created_at)}</div></div><div style={{ display: "flex", alignItems: "center", gap: 9 }}><Avatar initials={order.customer.avatar} size={28} /><div><div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 13, color: "#D6D3D1" }}>{order.customer.name}</div><div style={{ color: "#3D3632", fontSize: 11 }}>{order.customer.email}</div></div></div><div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, color: "#57534E" }}>{order.items.length}</div><div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: "#F59E0B" }}>${order.total.toFixed(2)}</div><StatusBadge status={order.status} /><div style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ fontSize: 15 }}>{PAYMENT_CFG[order.payment]?.icon}</span><span style={{ fontSize: 11, color: "#44403C" }}>{PAYMENT_CFG[order.payment]?.label}</span></div><div style={{ display: "flex", gap: 6, alignItems: "center" }}><button onClick={() => setDrawerOrder(order)} style={{ width: 30, height: 30, borderRadius: 7, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", cursor: "pointer", color: "#44403C", display: "flex", alignItems: "center", justifyContent: "center" }}><MdVisibility /></button><StatusSelect value={order.status} onChange={(s) => updateStatus(order.id, s)} /></div></div>))
+          )}
         </div>
       </div>
       <OrderDrawer order={drawerOrder} onClose={() => setDrawerOrder(null)} onStatusChange={(id, s) => { updateStatus(id, s); setDrawerOrder(prev => prev ? { ...prev, status: s } : null); }} />

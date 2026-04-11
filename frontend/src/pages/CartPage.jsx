@@ -552,7 +552,6 @@ export default function CartPage() {
                       default: return <MdShoppingBag />;
                     }
                   };
-
                   return (
                     <CartItem
                       key={`${item.id}-${JSON.stringify(item.customizations || {})}`}

@@ -1,4 +1,7 @@
 import { useState, useEffect, useRef } from "react";
+import { useParams } from "react-router-dom";
+import axios from "axios";
+import { useAuth } from "../context/AuthContext";
 import {
   MdFastfood,
   MdLunchDining,
@@ -30,30 +33,8 @@ const FontLink = () => (
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;500;600;700;800;900&family=Barlow:wght@400;500&display=swap" rel="stylesheet" />
 );
 
-/* ─── Mock Order Data ────────────────────────────────────────────────── */
-const MOCK_ORDER = {
-  order_number: "BH-20482",
-  created_at: new Date(Date.now() - 12 * 60000).toISOString(),
-  total_amount: 47.97,
-  payment_status: "paid",
-  payment_method: "card",
-  delivery_address: "14 Jaffa Road, Jerusalem, 9423117",
-  delivery_instructions: "Ring bell twice. Leave at door if no answer.",
-  estimated_delivery_time: new Date(Date.now() + 16 * 60000).toISOString(),
-  items: [
-    { id: 1, icon: <MdFastfood />, name: "Truffle Royale", qty: 1, price: 16.99, addons: ["Extra Cheese"] },
-    { id: 2, icon: <MdLayers />, name: "Bacon Overload", qty: 2, price: 13.99, addons: [] },
-    { id: 3, icon: <MdLunchDining />, name: "Truffle Fries", qty: 1, price: 6.99, addons: [] },
-  ],
-  driver: {
-    name: "Daniel M.",
-    vehicle: "Scooter",
-    rating: 4.9,
-    icon: <MdPerson />,
-    phone: "+972 50-555-0142",
-    email: "daniel@burgerdelivery.com"
-  }
-};
+/* ─── Order Data ────────────────────────────────────────────────── */
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 
 /* ─── Status Pipeline ────────────────────────────────────────────────── */
@@ -81,6 +62,10 @@ function useInView(threshold = 0.1) {
 function useEtaCountdown(etaISO) {
   const [secs, setSecs] = useState(0);
   useEffect(() => {
+    if (!etaISO) {
+      setSecs(0);
+      return;
+    }
     const calc = () => Math.max(0, Math.floor((new Date(etaISO) - Date.now()) / 1000));
     setSecs(calc());
     const iv = setInterval(() => setSecs(calc()), 1000);
@@ -237,23 +222,107 @@ const CardHead = ({ eyebrow, title }) => (
 
 /* ─── Main Page ──────────────────────────────────────────────────────── */
 export default function OrderTrackingPage() {
-  const order = MOCK_ORDER;
-  const [currentStep, setCurrentStep] = useState(2); // "preparing"
+  const { id } = useParams();
+  const { token } = useAuth();
+  const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [currentStep, setCurrentStep] = useState(0);
   const [pageIn, setPageIn] = useState(false);
   const [isRating, setIsRating] = useState(false);
   const [isReordering, setIsReordering] = useState(false);
-  const [error, setError] = useState(null);
-  const { m: etaM, s: etaS, secs: etaSecs } = useEtaCountdown(order.estimated_delivery_time);
-  const etaProgress = Math.max(0, Math.min(100, 100 - (etaSecs / (30 * 60)) * 100));
 
-  // Simulate real-time progression (demo)
+  // ETA countdown hook - must be called unconditionally to avoid hook count mismatch
+  const { m: etaM, s: etaS, secs: etaSecs } = useEtaCountdown(order?.estimated_delivery_time);
+
+  // Fetch order data
+  useEffect(() => {
+    console.log('OrderTrackingPage useEffect: id=', id, 'token=', !!token);
+    const fetchOrder = async () => {
+      try {
+        console.log('Fetching order:', id);
+        setLoading(true);
+        const response = await axios.get(`${API_BASE}/api/orders/${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        console.log('Fetch response:', response.data);
+
+        if (response.data.success) {
+          const orderData = response.data.data;
+
+          // Transform API data to component format
+          const transformedOrder = {
+            order_number: orderData.order_number,
+            created_at: orderData.created_at,
+            total_amount: orderData.total_amount,
+            payment_status: orderData.payment_status,
+            payment_method: orderData.payment_method,
+            delivery_address: orderData.delivery_address,
+            delivery_instructions: orderData.delivery_instructions,
+            estimated_delivery_time: orderData.estimated_delivery_time,
+            items: orderData.items.map(item => ({
+              id: item.id,
+              icon: getIconForProduct(item.product_name),
+              name: item.product_name,
+              qty: item.quantity,
+              price: item.unit_price,
+              addons: item.customizations?.addons || []
+            })),
+            driver: {
+              name: "Daniel M.", // Mock driver data for now
+              vehicle: "Scooter",
+              rating: 4.9,
+              icon: <MdPerson />,
+              phone: "+972 50-555-0142",
+              email: "daniel@burgerdelivery.com"
+            }
+          };
+
+          setOrder(transformedOrder);
+
+          // Set initial step based on order status
+          const statusSteps = {
+            'pending': 0,
+            'confirmed': 1,
+            'preparing': 2,
+            'ready': 3,
+            'on_the_way': 4,
+            'delivered': 5
+          };
+          setCurrentStep(statusSteps[orderData.status] || 0);
+        }
+      } catch (err) {
+        console.error('Fetch error:', err);
+        setError(err.response?.data?.message || 'Failed to load order');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id && token) {
+      fetchOrder();
+    }
+  }, [id, token]);
+
+  // Helper function to get icons for products
+  const getIconForProduct = (productName) => {
+    if (productName.toLowerCase().includes('burger')) return <MdFastfood />;
+    if (productName.toLowerCase().includes('fries') || productName.toLowerCase().includes('sides')) return <MdLunchDining />;
+    if (productName.toLowerCase().includes('drink')) return <MdLocalDrink />;
+    return <MdLayers />;
+  };
+
+  // Page animation
   useEffect(() => {
     const t = setTimeout(() => setPageIn(true), 80);
     return () => clearTimeout(t);
   }, []);
 
+  // Simulate real-time progression for demo
   useEffect(() => {
-    if (currentStep >= STEPS.length - 1) return;
+    if (!order || currentStep >= STEPS.length - 1) return;
     const iv = setInterval(() => {
       setCurrentStep(s => {
         if (s >= STEPS.length - 1) { clearInterval(iv); return s; }
@@ -261,7 +330,7 @@ export default function OrderTrackingPage() {
       });
     }, 12000); // reduced frequency
     return () => clearInterval(iv);
-  }, [currentStep]);
+  }, [currentStep, order]);
 
   // Handle rate order
   const handleRateOrder = async () => {
@@ -339,10 +408,6 @@ export default function OrderTrackingPage() {
     }
   };
 
-  const subtotal = order.items.reduce((s, i) => s + Number(i.price) * i.qty, 0);
-  const delivery = subtotal >= 20 ? 0 : 3.99;
-  const total = subtotal + delivery;
-
   // Build log timestamps
   const now = Date.now();
   const logTimes = STEPS.slice(0, currentStep + 1).map((_, i) => {
@@ -353,6 +418,89 @@ export default function OrderTrackingPage() {
   const fmt = (d) => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   const fmtDate = (iso) => new Date(iso).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
+  // Loading state
+  if (loading) {
+    return (
+      <div style={{
+        background: "#0C0A09",
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "#F5F5F4"
+      }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🍔</div>
+          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18, marginBottom: 8 }}>
+            Loading your order...
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div style={{
+        background: "#0C0A09",
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "#F5F5F4"
+      }}>
+        <div style={{ textAlign: "center", maxWidth: 400 }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>❌</div>
+          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18, marginBottom: 8 }}>
+            Failed to load order
+          </div>
+          <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 14, color: "#78716C", marginBottom: 16 }}>
+            {error}
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              padding: "10px 20px",
+              background: "rgba(245,158,11,0.1)",
+              border: "1px solid rgba(245,158,11,0.3)",
+              borderRadius: 8,
+              color: "#F59E0B",
+              cursor: "pointer"
+            }}
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // No order found
+  if (!order) {
+    return (
+      <div style={{
+        background: "#0C0A09",
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "#F5F5F4"
+      }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
+          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18, marginBottom: 8 }}>
+            Order not found
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const subtotal = order.items.reduce((s, i) => s + Number(i.price) * i.qty, 0);
+  const delivery = subtotal >= 20 ? 0 : 3.99;
+  const total = subtotal + delivery;
+  const etaProgress = Math.max(0, Math.min(100, 100 - (etaSecs / (30 * 60)) * 100));
   const isDelivered = currentStep === STEPS.length - 1;
 
   return (
@@ -471,15 +619,23 @@ export default function OrderTrackingPage() {
                       <MdTimer size={14} /> Estimated Arrival
                     </div>
                     <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                      <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 52, color: "#F59E0B", letterSpacing: "0.02em", lineHeight: 1 }}>
-                        {etaM}
-                      </span>
-                      <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 18, color: "#57534E" }}>
-                        min {etaS}s
-                      </span>
+                      {new Date(order.estimated_delivery_time) < Date.now() ? (
+                        <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 52, color: "#EF4444", letterSpacing: "0.02em", lineHeight: 1 }}>
+                          Delayed
+                        </span>
+                      ) : (
+                        <>
+                          <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 52, color: "#F59E0B", letterSpacing: "0.02em", lineHeight: 1 }}>
+                            {etaM}
+                          </span>
+                          <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 18, color: "#57534E" }}>
+                            min {etaS}s
+                          </span>
+                        </>
+                      )}
                     </div>
                     <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 12, color: "#57534E", marginTop: 4 }}>
-                      Arriving at {new Date(order.estimated_delivery_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      Arriving at {new Date(order.estimated_delivery_time).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
                     </div>
                   </div>
                   {/* Animated scooter progress */}

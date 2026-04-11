@@ -7,7 +7,7 @@ async function setAdminPassword() {
     await sequelize.authenticate();
     console.log('Connected to database');
 
-    const adminUser = await User.findOne({ where: { email: 'admin@burger.com' } });
+    const adminUser = await User.findOne({ where: { email: 'admin@burgerdelivery.com' } });
     if (!adminUser) {
       console.log('Admin user not found');
       return;

@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from "react";
+import axios from "axios";
+import { useAuth } from "../context/AuthContext";
 import {
   MdAccessTime, MdRestaurant, MdDeliveryDining, MdCheckCircle, MdCancel, MdCreditCard, MdPayments, MdApple, MdMoney,
   MdWarning, MdFlashOn, MdLocationOn, MdClose, MdReceipt, MdSearch, MdExpandMore, MdExpandLess,
@@ -11,89 +13,8 @@ const FontLink = () => (
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;500;600;700;800;900&family=Barlow:wght@400;500&display=swap" rel="stylesheet" />
 );
 
-/* ─── Mock data ──────────────────────────────────────────────────────── */
-const MOCK_ORDERS = [
-  {
-    id: 1, order_number: "BH-20482",
-    created_at: new Date(Date.now() - 4 * 60000),
-    status: "on_the_way",
-    total_amount: 47.97, payment_method: "card",
-    delivery_address: "14 Jaffa Road, Jerusalem, 9423117",
-    delivery_instructions: "Ring bell twice",
-    items: [
-      { product_name: "Truffle Royale", quantity: 1, unit_price: 16.99, total_price: 16.99, emoji: "🍔" },
-      { product_name: "Truffle Fries", quantity: 2, unit_price: 6.99, total_price: 13.98, emoji: "🍟" },
-      { product_name: "Chocolate Shake", quantity: 1, unit_price: 5.99, total_price: 5.99, emoji: "🥤" },
-    ],
-    driver: "Daniel M.", eta: 12,
-  },
-  {
-    id: 2, order_number: "BH-20471",
-    created_at: new Date(Date.now() - 8 * 3600000),
-    status: "delivered",
-    total_amount: 59.96, payment_method: "paypal",
-    delivery_address: "14 Jaffa Road, Jerusalem, 9423117",
-    delivery_instructions: "",
-    items: [
-      { product_name: "Bacon Overload", quantity: 2, unit_price: 13.99, total_price: 27.98, emoji: "🥓" },
-      { product_name: "Inferno BBQ", quantity: 1, unit_price: 12.99, total_price: 12.99, emoji: "🌶️" },
-      { product_name: "Onion Rings", quantity: 2, unit_price: 5.49, total_price: 10.98, emoji: "🧅" },
-    ],
-    driver: "Sara L.", eta: null,
-  },
-  {
-    id: 3, order_number: "BH-20459",
-    created_at: new Date(Date.now() - 17 * 3600000),
-    status: "delivered",
-    total_amount: 22.98, payment_method: "apple",
-    delivery_address: "14 Jaffa Road, Jerusalem, 9423117",
-    delivery_instructions: "Leave at door",
-    items: [
-      { product_name: "OG Classic", quantity: 2, unit_price: 8.99, total_price: 17.98, emoji: "🍔" },
-      { product_name: "Berry Smoothie", quantity: 1, unit_price: 5.49, total_price: 5.00, emoji: "🫐" },
-    ],
-    driver: "Yoni K.", eta: null,
-  },
-  {
-    id: 4, order_number: "BH-20441",
-    created_at: new Date(Date.now() - 6 * 86400000),
-    status: "preparing",
-    total_amount: 33.97, payment_method: "card",
-    delivery_address: "3 Herzl St, Tel Aviv",
-    delivery_instructions: "",
-    items: [
-      { product_name: "Double Smash", quantity: 1, unit_price: 14.99, total_price: 14.99, emoji: "✨" },
-      { product_name: "Truffle Fries", quantity: 2, unit_price: 6.99, total_price: 13.98, emoji: "🍟" },
-      { product_name: "Lava Brownie", quantity: 1, unit_price: 6.99, total_price: 5.00, emoji: "🍫" },
-    ],
-    driver: null, eta: 28,
-  },
-  {
-    id: 5, order_number: "BH-20430",
-    created_at: new Date(Date.now() - 14 * 86400000),
-    status: "cancelled",
-    total_amount: 38.97, payment_method: "card",
-    delivery_address: "14 Jaffa Road, Jerusalem",
-    delivery_instructions: "",
-    items: [
-      { product_name: "The Garden", quantity: 3, unit_price: 10.99, total_price: 32.97, emoji: "🌿" },
-      { product_name: "Berry Smoothie", quantity: 1, unit_price: 5.49, total_price: 6.00, emoji: "🫐" },
-    ],
-    driver: null, eta: null,
-  },
-  {
-    id: 6, order_number: "BH-20415",
-    created_at: new Date(Date.now() - 22 * 86400000),
-    status: "delivered",
-    total_amount: 16.99, payment_method: "cash",
-    delivery_address: "14 Jaffa Road, Jerusalem",
-    delivery_instructions: "",
-    items: [
-      { product_name: "Truffle Royale", quantity: 1, unit_price: 16.99, total_price: 16.99, emoji: "🍔" },
-    ],
-    driver: "Daniel M.", eta: null,
-  },
-];
+/* ─── API constants ──────────────────────────────────────────────────── */
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 /* ─── Status config ──────────────────────────────────────────────────── */
 const STATUS_CFG = {
@@ -329,7 +250,10 @@ const FilterPill = ({ statusKey, count, active, onClick }) => {
 
 /* ─── Main Page ──────────────────────────────────────────────────────── */
 export default function OrdersPage() {
-  const [orders, setOrders] = useState(MOCK_ORDERS);
+  const { token } = useAuth();
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [cancelTarget, setCancelTarget] = useState(null);
@@ -337,6 +261,58 @@ export default function OrdersPage() {
   const [pageIn, setPageIn] = useState(false);
 
   useEffect(() => { const t = setTimeout(() => setPageIn(true), 80); return () => clearTimeout(t); }, []);
+
+  // Fetch orders
+  useEffect(() => {
+    const fetchOrders = async () => {
+      console.log('Starting fetch orders...');
+      try {
+        setLoading(true);
+        const response = await axios.get(`${API_BASE}/api/users/orders`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        console.log('Orders response:', response.data);
+
+        if (response.data.success) {
+          // Transform API data to match component format
+          const transformedOrders = response.data.data.map(order => ({
+            ...order,
+            // Add emoji based on product names
+            items: order.items.map(item => ({
+              ...item,
+              emoji: getEmojiForProduct(item.product_name)
+            }))
+          }));
+          setOrders(transformedOrders);
+        }
+      } catch (err) {
+        console.error('Fetch orders error:', err);
+        setError(err.response?.data?.message || 'Failed to load orders');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (token) {
+      fetchOrders();
+    } else {
+      setLoading(false);
+    }
+  }, [token]);
+
+  // Helper function to get emojis for products
+  const getEmojiForProduct = (productName) => {
+    if (productName.toLowerCase().includes('burger')) return "🍔";
+    if (productName.toLowerCase().includes('fries') || productName.toLowerCase().includes('rings')) return "🍟";
+    if (productName.toLowerCase().includes('shake') || productName.toLowerCase().includes('smoothie')) return "🥤";
+    if (productName.toLowerCase().includes('brownie') || productName.toLowerCase().includes('chocolate')) return "🍫";
+    if (productName.toLowerCase().includes('bbq') || productName.toLowerCase().includes('inferno')) return "🌶️";
+    if (productName.toLowerCase().includes('bacon')) return "🥓";
+    if (productName.toLowerCase().includes('garden') || productName.toLowerCase().includes('veg')) return "🌿";
+    return "🍽️";
+  };
 
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
@@ -360,12 +336,70 @@ export default function OrdersPage() {
     ...Object.fromEntries(Object.keys(STATUS_CFG).map(s => [s, orders.filter(o => o.status === s).length])),
   };
 
+  // Loading state
+  if (loading) {
+    return (
+      <div style={{
+        background: "#0C0A09",
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "#F5F5F4"
+      }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🍔</div>
+          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18, marginBottom: 8 }}>
+            Loading your orders...
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div style={{
+        background: "#0C0A09",
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "#F5F5F4"
+      }}>
+        <div style={{ textAlign: "center", maxWidth: 400 }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>❌</div>
+          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18, marginBottom: 8 }}>
+            Failed to load orders
+          </div>
+          <div style={{ fontFamily: "'Barlow', sans-serif", fontSize: 14, color: "#78716C", marginBottom: 16 }}>
+            {error}
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              padding: "10px 20px",
+              background: "rgba(245,158,11,0.1)",
+              border: "1px solid rgba(245,158,11,0.3)",
+              borderRadius: 8,
+              color: "#F59E0B",
+              cursor: "pointer"
+            }}
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Filter
   const filtered = orders.filter(o =>
     (filter === "all" || o.status === filter) &&
     (search === "" ||
       o.order_number.toLowerCase().includes(search.toLowerCase()) ||
-      o.items.some(i => i.product_name.toLowerCase().includes(search.toLowerCase())))
+      o.items.some(i => i.name.toLowerCase().includes(search.toLowerCase())))
   );
 
   const activeOrders = orders.filter(o => ["pending", "preparing", "on_the_way"].includes(o.status));

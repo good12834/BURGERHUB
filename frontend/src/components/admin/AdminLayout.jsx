@@ -9,7 +9,9 @@ import {
   MdLocalShipping,
   MdLocalOffer,
   MdAnalytics,
-  MdSettings
+  MdSettings,
+  MdChevronLeft,
+  MdChevronRight
 } from 'react-icons/md';
 
 /* ─── Fonts ─────────────────────────────────────────────────────────── */
@@ -100,7 +102,7 @@ const AdminLayout = ({ children }) => {
               color: "#44403C", fontSize: 16, padding: 4,
               flexShrink: 0,
             }}>
-              {sidebarCollapsed ? "→" : "←"}
+              {sidebarCollapsed ? <MdChevronRight /> : <MdChevronLeft />}
             </button>
           </div>
 

@@ -1,21 +1,19 @@
 import { useState, useEffect } from "react";
+import {
+  MdStar,
+  MdEmail,
+  MdPhone,
+  MdSearch,
+  MdVisibility
+} from "react-icons/md";
+import axios from "axios";
 
-/* ─── Mock Data (Enhanced) ───────────────────────────────────────────── */
-const MOCK_CUSTOMERS = [
-  { id: 1, name: "Alex Richardson", email: "alex.r@gmail.com", phone: "+972 54-123-4567", orders: 12, total_spent: 452.88, status: "active", avatar: "AR", joined: "2025-08-12", last_order: "2 mins ago" },
-  { id: 2, name: "Lena Kowalski", email: "l.kowalski@outlook.com", phone: "+972 52-888-1122", orders: 5, total_spent: 129.50, status: "new", avatar: "LK", joined: "2026-02-15", last_order: "8 mins ago" },
-  { id: 3, name: "Omar Suleiman", email: "omar_s@hotmial.com", phone: "+972 50-777-3344", orders: 28, total_spent: 1240.20, status: "vip", avatar: "OS", joined: "2024-11-05", last_order: "14 mins ago" },
-  { id: 4, name: "Dana Miller", email: "dana.m@yahoo.com", phone: "+972 53-999-0011", orders: 1, total_spent: 16.99, status: "new", avatar: "DM", joined: "2026-03-01", last_order: "24 mins ago" },
-  { id: 5, name: "Tom Hollander", email: "tom.h@gmail.com", phone: "+972 54-555-6677", orders: 15, total_spent: 312.45, status: "active", avatar: "TH", joined: "2025-10-20", last_order: "32 mins ago" },
-  { id: 6, name: "Sara Levy", email: "sara.l@protonmail.com", phone: "+972 58-444-2211", orders: 0, total_spent: 0.00, status: "registered", avatar: "SL", joined: "2026-02-28", last_order: "Never" },
-  { id: 7, name: "James Potter", email: "j.potter@hogwarts.edu", phone: "+972 50-111-2233", orders: 42, total_spent: 2150.12, status: "vip", avatar: "JP", joined: "2024-05-12", last_order: "1 hr ago" },
-  { id: 8, name: "Nina Kraviz", email: "nina.k@techno.de", phone: "+972 52-333-4455", orders: 6, total_spent: 98.40, status: "active", avatar: "NK", joined: "2026-01-10", last_order: "3 hrs ago" },
-];
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 const STATUS_CFG = {
-  vip:        { color: "#F59E0B", bg: "rgba(245,158,11,0.1)",  border: "rgba(245,158,11,0.25)", label: "VIP ✨" },
-  active:     { color: "#22C55E", bg: "rgba(34,197,94,0.1)",   border: "rgba(34,197,94,0.25)",  label: "Active" },
-  new:        { color: "#60A5FA", bg: "rgba(96,165,250,0.1)",  border: "rgba(96,165,250,0.25)", label: "New Member" },
+  vip: { color: "#F59E0B", bg: "rgba(245,158,11,0.1)", border: "rgba(245,158,11,0.25)", label: "VIP", icon: <MdStar /> },
+  active: { color: "#22C55E", bg: "rgba(34,197,94,0.1)", border: "rgba(34,197,94,0.25)", label: "Active" },
+  new: { color: "#60A5FA", bg: "rgba(96,165,250,0.1)", border: "rgba(96,165,250,0.25)", label: "New Member" },
   registered: { color: "#A8A29E", bg: "rgba(168,162,158,0.1)", border: "rgba(168,162,158,0.25)", label: "Registered" },
 };
 
@@ -76,8 +74,8 @@ const CustomerDrawer = ({ customer, onClose }) => {
           <div>
             <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: "0.22em", color: "#3D3632", textTransform: "uppercase", marginBottom: 12 }}>Contact Details</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}><span style={{ fontSize: 18, width: 20, textAlign: "center" }}>📧</span><span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: "#A8A29E" }}>{customer.email}</span></div>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}><span style={{ fontSize: 18, width: 20, textAlign: "center" }}>📞</span><span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: "#A8A29E" }}>{customer.phone}</span></div>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}><MdEmail style={{ fontSize: 18, width: 20, textAlign: "center", color: "#F59E0B" }} /><span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: "#A8A29E" }}>{customer.email}</span></div>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}><MdPhone style={{ fontSize: 18, width: 20, textAlign: "center", color: "#F59E0B" }} /><span style={{ fontFamily: "'Barlow', sans-serif", fontSize: 13, color: "#A8A29E" }}>{customer.phone}</span></div>
             </div>
           </div>
           <div>
@@ -103,8 +101,101 @@ export default function Customers() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [drawerUser, setDrawerUser] = useState(null);
+  const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [stats, setStats] = useState({ total: 0, joinedToday: 0 });
 
-  const filtered = MOCK_CUSTOMERS.filter(c =>
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
+
+  const fetchCustomers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_BASE}/api/admin/users?role=customer`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      const usersData = response.data.data.users;
+
+      // Transform API data to match component format
+      const transformedCustomers = usersData.map(user => {
+        const nameParts = user.name.split(' ');
+        const initials = nameParts.length > 1
+          ? `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`.toUpperCase()
+          : user.name.substring(0, 2).toUpperCase();
+
+        // Determine status based on order count and account age
+        const accountAge = (new Date() - new Date(user.created_at)) / (1000 * 60 * 60 * 24);
+        let status = 'registered';
+        if (user.orderCount >= 20) {
+          status = 'vip';
+        } else if (user.orderCount >= 5) {
+          status = 'active';
+        } else if (accountAge <= 30) {
+          status = 'new';
+        }
+
+        // Calculate time since last order
+        let lastOrder = 'Never';
+        if (user.last_login) {
+          const lastLogin = new Date(user.last_login);
+          const now = new Date();
+          const diffMs = now - lastLogin;
+          const diffMins = Math.floor(diffMs / 60000);
+          const diffHours = Math.floor(diffMs / 3600000);
+          const diffDays = Math.floor(diffMs / 86400000);
+
+          if (diffMins < 60) {
+            lastOrder = `${diffMins} min${diffMins !== 1 ? 's' : ''} ago`;
+          } else if (diffHours < 24) {
+            lastOrder = `${diffHours} hr${diffHours !== 1 ? 's' : ''} ago`;
+          } else {
+            lastOrder = `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+          }
+        }
+
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone || 'N/A',
+          orders: user.orderCount || 0,
+          total_spent: 0, // Will be calculated from orders if needed
+          status: status,
+          avatar: initials,
+          joined: user.created_at,
+          last_order: lastOrder
+        };
+      });
+
+      setCustomers(transformedCustomers);
+
+      // Calculate stats
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const joinedToday = usersData.filter(user =>
+        new Date(user.created_at) >= today
+      ).length;
+
+      setStats({
+        total: usersData.length,
+        joinedToday: joinedToday
+      });
+
+    } catch (err) {
+      console.error('Error fetching customers:', err);
+      setError('Failed to load customers. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filtered = customers.filter(c =>
     (filter === "all" || c.status === filter) &&
     (c.name.toLowerCase().includes(search.toLowerCase()) || c.email.toLowerCase().includes(search.toLowerCase()))
   );
@@ -123,17 +214,17 @@ export default function Customers() {
                 Customer Base
               </h1>
             </div>
-            
+
             <div style={{ display: "flex", gap: 24, marginBottom: 8 }}>
-              <div><div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, color: "#F5F5F4" }}>842</div><div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, color: "#3D3632", letterSpacing: "0.15em", textTransform: "uppercase" }}>Total Users</div></div>
+              <div><div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, color: "#F5F5F4" }}>{stats.total}</div><div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, color: "#3D3632", letterSpacing: "0.15em", textTransform: "uppercase" }}>Total Users</div></div>
               <div style={{ width: 1, height: 32, background: "rgba(255,255,255,0.06)" }} />
-              <div><div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, color: "#22C55E" }}>12</div><div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, color: "#3D3632", letterSpacing: "0.15em", textTransform: "uppercase" }}>Joined Today</div></div>
+              <div><div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, color: "#22C55E" }}>{stats.joinedToday}</div><div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 10, color: "#3D3632", letterSpacing: "0.15em", textTransform: "uppercase" }}>Joined Today</div></div>
             </div>
           </div>
 
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
             <div style={{ position: "relative", flex: 1, minWidth: 260 }}>
-              <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 15, opacity: 0.4 }}>🔍</span>
+              <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 15, opacity: 0.4 }}><MdSearch /></span>
               <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or email…"
                 style={{ width: "100%", padding: "10px 12px 10px 38px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 10, color: "#F5F5F4", fontFamily: "'Barlow', sans-serif", fontSize: 13, outline: "none" }}
               />
@@ -148,28 +239,38 @@ export default function Customers() {
       </div>
 
       <div style={{ maxWidth: 1400, margin: "0 auto", padding: "24px 40px 60px" }}>
-        <div style={{ background: "#0F0D0B", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, overflow: "hidden" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 180px 100px 110px 110px 100px 80px", padding: "14px 24px", borderBottom: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.02)", gap: 12, alignItems: "center" }}>
-            {["Customer", "Contact", "Orders", "Spent", "Last Active", "Status", "Actions"].map(h => (
-              <span key={h} style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: "0.22em", textTransform: "uppercase", color: "#3D3632" }}>{h}</span>
-            ))}
-          </div>
-          {filtered.map((user, i) => (
-            <div key={user.id} style={{ display: "grid", gridTemplateColumns: "1fr 180px 100px 110px 110px 100px 80px", padding: "16px 24px", borderBottom: "1px solid rgba(255,255,255,0.04)", alignItems: "center", gap: 12, transition: "background 0.2s", cursor: "pointer" }}
-              onMouseEnter={e => e.currentTarget.style.background = "rgba(245,158,11,0.03)"}
-              onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-              onClick={() => setDrawerUser(user)}
-            >
-              <div style={{ display: "flex", gap: 12, alignItems: "center" }}><Avatar initials={user.avatar} size={36} /><div style={{ minWidth: 0 }}><div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 14, color: "#F5F5F4", letterSpacing: "0.03em" }}>{user.name}</div><div style={{ fontSize: 11, color: "#3D3632" }}>Joined {new Date(user.joined).getFullYear()}</div></div></div>
-              <div style={{ minWidth: 0 }}><div style={{ fontSize: 12, color: "#A8A29E", overflow: "hidden", textOverflow: "ellipsis" }}>{user.email}</div><div style={{ fontSize: 11, color: "#3D3632" }}>{user.phone}</div></div>
-              <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, color: "#A8A29E" }}>{user.orders}</div>
-              <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, color: "#22C55E" }}>${user.total_spent.toFixed(0)}</div>
-              <div style={{ fontSize: 12, color: "#57534E" }}>{user.last_order}</div>
-              <StatusBadge status={user.status} />
-              <div style={{ display: "flex", gap: 6 }}><button style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", cursor: "pointer", color: "#44403C", display: "flex", alignItems: "center", justifyContent: "center" }}>👁</button></div>
+        {loading ? (
+          <div style={{ textAlign: "center", padding: 60, color: "#78716C" }}>Loading customers...</div>
+        ) : error ? (
+          <div style={{ textAlign: "center", padding: 60, color: "#EF4444" }}>{error}</div>
+        ) : (
+          <div style={{ background: "#0F0D0B", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, overflow: "hidden" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 180px 100px 110px 110px 100px 80px", padding: "14px 24px", borderBottom: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.02)", gap: 12, alignItems: "center" }}>
+              {["Customer", "Contact", "Orders", "Spent", "Last Active", "Status", "Actions"].map(h => (
+                <span key={h} style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: "0.22em", textTransform: "uppercase", color: "#3D3632" }}>{h}</span>
+              ))}
             </div>
-          ))}
-        </div>
+            {filtered.length === 0 ? (
+              <div style={{ textAlign: "center", padding: 60, color: "#78716C" }}>No customers found</div>
+            ) : (
+              filtered.map((user, i) => (
+                <div key={user.id} style={{ display: "grid", gridTemplateColumns: "1fr 180px 100px 110px 110px 100px 80px", padding: "16px 24px", borderBottom: "1px solid rgba(255,255,255,0.04)", alignItems: "center", gap: 12, transition: "background 0.2s", cursor: "pointer" }}
+                  onMouseEnter={e => e.currentTarget.style.background = "rgba(245,158,11,0.03)"}
+                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                  onClick={() => setDrawerUser(user)}
+                >
+                  <div style={{ display: "flex", gap: 12, alignItems: "center" }}><Avatar initials={user.avatar} size={36} /><div style={{ minWidth: 0 }}><div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 14, color: "#F5F5F4", letterSpacing: "0.03em" }}>{user.name}</div><div style={{ fontSize: 11, color: "#3D3632" }}>Joined {new Date(user.joined).getFullYear()}</div></div></div>
+                  <div style={{ minWidth: 0 }}><div style={{ fontSize: 12, color: "#A8A29E", overflow: "hidden", textOverflow: "ellipsis" }}>{user.email}</div><div style={{ fontSize: 11, color: "#3D3632" }}>{user.phone}</div></div>
+                  <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, color: "#A8A29E" }}>{user.orders}</div>
+                  <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, color: "#22C55E" }}>${user.total_spent.toFixed(0)}</div>
+                  <div style={{ fontSize: 12, color: "#57534E" }}>{user.last_order}</div>
+                  <StatusBadge status={user.status} />
+                  <div style={{ display: "flex", gap: 6 }}><button style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", cursor: "pointer", color: "#44403C", display: "flex", alignItems: "center", justifyContent: "center" }}><MdVisibility /></button></div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </div>
       <CustomerDrawer customer={drawerUser} onClose={() => setDrawerUser(null)} />
     </div>
