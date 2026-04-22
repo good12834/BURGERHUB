@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { useCart } from "../context/CartContext";
 import {
   MdFastfood,
   MdLunchDining,
@@ -48,13 +50,20 @@ const DEAL_OF_DAY = {
   highlight: true,
 };
 
+// Deal expansion mapping - defines what products each deal adds to cart
+const DEAL_EXPANSIONS = {
+  6: [ // Shake Trio
+    { productId: 12, quantity: 3, adjustedPrice: 3.9967 } // 3 milkshakes at ~$4.00 each to total $11.99
+  ]
+};
+
 const DEALS = [
   { id: 1, image: "https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?q=80&w=800&auto=format&fit=crop", name: "Double Combo", desc: "2 Classic Burgers + 2 Truffle Fries + 2 Drinks", oldPrice: 29.98, newPrice: 19.99, savePct: 33, tag: "BESTSELLER", tagColor: "#F59E0B", code: null },
   { id: 2, image: "https://images.unsplash.com/photo-1553979459-d2229ba7433b?q=80&w=800&auto=format&fit=crop", name: "Bacon BOGO", desc: "Buy 1 Bacon Overload, get the second FREE", oldPrice: 13.99, newPrice: 13.99, savePct: 50, tag: "BOGO", tagColor: "#EF4444", code: "BOGO50" },
   { id: 3, image: "https://images.unsplash.com/photo-1610614819513-58e34989848b?q=80&w=800&auto=format&fit=crop", name: "Family Pack", desc: "4 Burgers + 4 Sides + 4 Drinks — feed the whole crew", oldPrice: 64.99, newPrice: 44.99, savePct: 31, tag: "FAMILY", tagColor: "#22C55E", code: null },
-  { id: 4, image: "https://images.unsplash.com/photo-1598150490541-04372ebbd360?q=80&w=800&auto=format&fit=crop", name: "Spice Night Duo", desc: "2 Nashville Hot + 2 Inferno BBQ + onion rings", oldPrice: 48.99, newPrice: 32.99, savePct: 33, tag: "SPICY", tagColor: "#EF4444", code: null },
+   { id: 4, image: "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?q=80&w=800&auto=format&fit=crop", name: "Spice Night Duo", desc: "2 Nashville Hot + 2 Inferno BBQ + onion rings", oldPrice: 48.99, newPrice: 32.99, savePct: 33, tag: "SPICY", tagColor: "#EF4444", code: null },
   { id: 5, image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=800&auto=format&fit=crop", name: "Green & Clean", desc: "2 Garden Plant-Based + 2 Sweet Potato Fries + 2 Smoothies", oldPrice: 35.97, newPrice: 24.99, savePct: 30, tag: "VEGAN", tagColor: "#22C55E", code: "GREEN30" },
-  { id: 6, image: "https://images.unsplash.com/photo-1572490122747-3968b75cc699?q=80&w=800&auto=format&fit=crop", name: "Shake Trio", desc: "3 premium milkshakes: Chocolate, Vanilla, Strawberry", oldPrice: 17.97, newPrice: 11.99, savePct: 33, tag: "SWEET", tagColor: "#A78BFA", code: null },
+  { id: 6, image: "https://images.unsplash.com/photo-1572490122747-3968b75cc699?q=80&w=800&auto=format&fit=crop", name: "Shake Trio", desc: "3 premium milkshakes: Chocolate, Vanilla, Strawberry", oldPrice: 17.97, newPrice: 11.99, savePct: 33, tag: "SWEET", tagColor: "#A78BFA", code: null, expandable: true },
   { id: 7, image: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?q=80&w=800&auto=format&fit=crop", name: "Sides Fiesta", desc: "Truffle Fries + Onion Rings + Mac Bites + Churros", oldPrice: 24.96, newPrice: 16.99, savePct: 32, tag: "SIDES", tagColor: "#60A5FA", code: null },
   { id: 8, image: "https://images.unsplash.com/photo-1564355808539-22fda35bed7e?q=80&w=800&auto=format&fit=crop", name: "Luxury Night In", desc: "2 Truffle Royale + bottle of craft lemonade + brownie dessert", oldPrice: 47.98, newPrice: 34.99, savePct: 27, tag: "PREMIUM", tagColor: "#A78BFA", code: "LUXE27" },
 ];
@@ -191,10 +200,42 @@ const DealCard = ({ deal, delay }) => {
   const [hover, setHover] = useState(false);
   const [claimed, setClaimed] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
+  const { addToCart } = useCart();
+  const navigate = useNavigate();
 
   const claim = () => {
+    // Check if deal can be expanded into component products
+    if (deal.expandable && DEAL_EXPANSIONS[deal.id]) {
+      // Expand deal into component products
+      DEAL_EXPANSIONS[deal.id].forEach(item => {
+        // Create a mock product object for the component
+        const componentProduct = {
+          id: item.productId,
+          name: `${deal.name} (Deal)`, // Indicate it's part of a deal
+          price: item.adjustedPrice || 4.99, // Use adjusted price or fallback
+          image: deal.image // Use deal image
+        };
+        addToCart(componentProduct, item.quantity, { dealId: deal.id, dealName: deal.name });
+      });
+    } else {
+      // Add deal as a special item
+      const dealItem = {
+        id: `deal-${deal.id}`,
+        name: deal.name,
+        price: deal.newPrice,
+        image: deal.image,
+        quantity: 1,
+        customizations: { type: 'deal', originalPrice: deal.oldPrice, savings: deal.savePct }
+      };
+      addToCart(dealItem, 1, { type: 'deal' });
+    }
+
     setClaimed(true);
     setTimeout(() => setClaimed(false), 2500);
+  };
+
+  const goToCart = () => {
+    navigate('/checkout');
   };
 
   const copyCode = (e, code) => {
@@ -310,7 +351,7 @@ const DealCard = ({ deal, delay }) => {
         )}
 
         {/* CTA */}
-        <button onClick={claim} style={{
+        <button onClick={claimed ? goToCart : claim} style={{
           background: claimed
             ? "#22C55E"
             : "linear-gradient(135deg,#F59E0B,#D97706)",
@@ -322,7 +363,7 @@ const DealCard = ({ deal, delay }) => {
           transform: claimed ? "scale(0.97)" : "scale(1)",
           marginTop: 4, display: "flex", alignItems: "center", justifyContent: "center", gap: 8
         }}>
-          {claimed ? <><MdCheck /> DEAL CLAIMED!</> : <><MdFileDownload /> Claim Deal</>}
+          {claimed ? <><MdCheck /> Check Cart</> : <><MdFileDownload /> Claim Deal</>}
         </button>
       </div>
     </div>
@@ -332,6 +373,43 @@ const DealCard = ({ deal, delay }) => {
 /* ─── Deal of the Day Hero ───────────────────────────────────────────── */
 const DealHero = ({ deal, countdown }) => {
   const [claimed, setClaimed] = useState(false);
+  const { addToCart } = useCart();
+  const navigate = useNavigate();
+
+  const handleClaim = () => {
+    if (!claimed) {
+      // Check if deal can be expanded into component products
+      if (deal.expandable && DEAL_EXPANSIONS[deal.id]) {
+        // Expand deal into component products
+        DEAL_EXPANSIONS[deal.id].forEach(item => {
+          // Create a mock product object for the component
+          const componentProduct = {
+            id: item.productId,
+            name: `${deal.name} (Deal)`, // Indicate it's part of a deal
+            price: item.adjustedPrice || 4.99, // Use adjusted price or fallback
+            image: deal.image // Use deal image
+          };
+          addToCart(componentProduct, item.quantity, { dealId: deal.id, dealName: deal.name });
+        });
+      } else {
+        // Add deal as a special item
+        const dealItem = {
+          id: `deal-${deal.id}`,
+          name: deal.name,
+          price: deal.newPrice,
+          image: deal.image,
+          quantity: 1,
+          customizations: { type: 'deal', originalPrice: deal.oldPrice, savings: deal.savePct }
+        };
+        addToCart(dealItem, 1, { type: 'deal' });
+      }
+    }
+    setClaimed(!claimed);
+  };
+
+  const goToCart = () => {
+    navigate('/checkout');
+  };
   return (
     <div style={{
       background: "linear-gradient(135deg,#2A1400 0%,#1C0E00 50%,#0F0A05 100%)",
@@ -441,7 +519,7 @@ const DealHero = ({ deal, countdown }) => {
             </div>
           </div>
 
-          <button onClick={() => setClaimed(c => !c)} style={{
+          <button onClick={claimed ? goToCart : handleClaim} style={{
             background: claimed ? "#22C55E" : "linear-gradient(135deg,#F59E0B,#D97706)",
             color: "#1C1917", border: "none", cursor: "pointer",
             fontFamily: "'Barlow Condensed', sans-serif",
@@ -454,7 +532,7 @@ const DealHero = ({ deal, countdown }) => {
             onMouseEnter={e => { if (!claimed) { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 0 44px rgba(245,158,11,0.55)"; } }}
             onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = claimed ? "0 0 20px rgba(34,197,94,0.3)" : "0 0 30px rgba(245,158,11,0.35)"; }}
           >
-            {claimed ? <><MdCheck /> Claimed — Check Cart</> : <><MdRocketLaunch size={22} /> Claim This Deal</>}
+            {claimed ? <><MdCheck /> Check Cart</> : <><MdRocketLaunch size={22} /> Claim This Deal</>}
           </button>
         </div>
       </div>

@@ -1350,6 +1350,13 @@ export default function CheckoutPage() {
   const { cartItems, clearCart } = useCart();
   const { user, token } = useAuth();
   const navigate = useNavigate();
+
+  // Debug authentication status
+  useEffect(() => {
+    console.log('CheckoutPage - User:', user);
+    console.log('CheckoutPage - Token:', token);
+    console.log('CheckoutPage - Token in localStorage:', localStorage.getItem('token'));
+  }, [user, token]);
   const [currentStep, setCurrentStep] = useState(0);
   const [direction, setDirection] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -1437,10 +1444,49 @@ export default function CheckoutPage() {
   };
 
   const handlePlaceOrder = async (paymentData = null) => {
+    console.log('=== ORDER PLACEMENT DEBUG ===');
+    console.log('User:', user);
+    console.log('Token:', token ? token.substring(0, 20) + '...' : 'null');
+    console.log('Token from localStorage:', localStorage.getItem('token') ? 'exists' : 'null');
+    console.log('API_BASE:', API_BASE);
+
+    if (!user || !token) {
+      console.error('Authentication failed - user or token is missing');
+      toast.error('You must be logged in to place an order. Please log in and try again.');
+      navigate('/login');
+      return;
+    }
+
+    // Double-check token is set in axios
+    const storedToken = localStorage.getItem('token');
+    if (!storedToken) {
+      console.error('No token found in localStorage');
+      toast.error('Authentication error. Please log in again.');
+      navigate('/login');
+      return;
+    }
+
+    // Ensure axios has the token
+    axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+    console.log('Authorization header set for axios');
+
+    // Test API connectivity
+    try {
+      console.log('Testing API connectivity...');
+      await axios.get(`${API_BASE}/api/products`);
+      console.log('API connectivity test passed');
+    } catch (testError) {
+      console.error('API connectivity test failed:', testError.message);
+      toast.error('Server connection error. Please try again later.');
+      return;
+    }
+
     if (cartItems.length === 0) {
       toast.error('Your cart is empty. Please add items before placing an order.');
       return;
     }
+
+
 
     setLoading(true);
 
@@ -1480,26 +1526,46 @@ export default function CheckoutPage() {
         })
       };
       console.log('Sending order data:', orderData);
+      console.log('API URL:', `${API_BASE}/api/orders`);
+      console.log('Axios default headers:', axios.defaults.headers);
+      console.log('Axios common headers:', axios.defaults.headers.common);
+
       const response = await axios.post(`${API_BASE}/api/orders`, orderData);
 
       if (response.data.success) {
         const order = response.data.data;
         setOrderId(order.order_number);
         setSuccess(true);
+        // Clear cart after order creation (for cash payments, or as backup for card payments)
         clearCart();
+        console.log('Cart cleared after successful order creation');
       } else {
         throw new Error(response.data.message || 'Failed to create order');
       }
     } catch (error) {
       console.error("Order failed:", error);
-      alert("Failed to place order. Please try again.");
+      console.error("Error response:", error.response);
+
+      // Handle XMLHttpRequest errors
+      if (error.message && error.message.includes('responseText')) {
+        console.warn("XMLHttpRequest responseText error - this may be caused by browser devtools");
+        alert("Network error occurred. Please try again or refresh the page.");
+        return;
+      }
+
+      const errorMessage = error.response?.data?.message || error.message || "Failed to place order. Please try again.";
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   const handleStripeSuccess = (paymentData) => {
-    // Payment was successful, now create the order
+    // Payment was successful - clear cart immediately since payment is confirmed
+    console.log('Stripe payment successful, clearing cart immediately');
+    clearCart();
+
+    // Now create the order (cart is already cleared)
     handlePlaceOrder(paymentData);
   };
 

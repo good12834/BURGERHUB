@@ -14,5 +14,4 @@ const sequelize = new Sequelize({
 sequelize.authenticate()
     .then(() => console.log(`Database connected successfully (${sequelize.getDialect()} - ${process.env.DB_NAME}@${process.env.DB_HOST}:${process.env.DB_PORT})`))
     .catch(err => console.error('Unable to connect to database:', err.message));
-
 module.exports = sequelize;

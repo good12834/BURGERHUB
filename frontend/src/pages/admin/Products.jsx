@@ -131,6 +131,7 @@ const Products = () => {
     setError("");
     if (!form.name || !form.price) { setError("Name and price are required"); return; }
     try {
+      const token = localStorage.getItem('token');
       const payload = {
         name: form.name,
         description: form.description,
@@ -140,10 +141,15 @@ const Products = () => {
         is_featured: form.featured,
         is_available: form.status === "active"
       };
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      };
       if (editingProduct?.id) {
-        await axios.put(`${API_URL}/${editingProduct.id}`, payload);
+        await axios.put(`${API_URL}/admin/${editingProduct.id}`, payload, config);
       } else {
-        await axios.post(API_URL, payload);
+        await axios.post(`${API_URL}/admin`, payload, config);
       }
       queryClient.invalidateQueries("products");
       closeModal();
@@ -153,7 +159,7 @@ const Products = () => {
   const openCreate = () => { setEditingProduct(null); setForm(EMPTY_PRODUCT); setIsModalOpen(true); };
   const openEdit = (p) => { setEditingProduct(p); setForm({ name: p.name, category: p.category?.name || p.category, category_id: p.category_id || 1, price: p.price, description: p.description || "", status: p.is_available ? "active" : "inactive", featured: p.is_featured || false, image_url: p.image_url || "" }); setIsModalOpen(true); };
   const closeModal = () => { setIsModalOpen(false); setEditingProduct(null); setForm(EMPTY_PRODUCT); setError(""); };
-  const handleDelete = async (id) => { if (window.confirm("Are you sure you want to delete this product?")) { try { await axios.delete(`${API_URL}/${id}`); queryClient.invalidateQueries("products"); } catch (err) { alert("Failed to delete product"); } } };
+  const handleDelete = async (id) => { if (window.confirm("Are you sure you want to delete this product?")) { try { const token = localStorage.getItem('token'); await axios.delete(`${API_URL}/admin/${id}`, { headers: { Authorization: `Bearer ${token}` } }); queryClient.invalidateQueries("products"); } catch (err) { alert("Failed to delete product"); } } };
   const set = (field) => ({ target: { value } }) => setForm(prev => ({ ...prev, [field]: value }));
 
   return (
