@@ -325,7 +325,7 @@ const Modal = ({ item, onClose, onAddToCart }) => {
 };
 
 /* ─── Component: Cart Sidebar ─────────────────────────────────────── */
-const CartSidebar = ({ items, onRemove, onClear }) => {
+const CartSidebar = ({ items, onRemove, onClear, onCheckout }) => {
   const total = items.reduce((s, i) => s + i.lineTotal, 0);
 
   return (
@@ -380,7 +380,7 @@ const CartSidebar = ({ items, onRemove, onClear }) => {
         </div>
         <button
           disabled={items.length === 0}
-          onClick={() => navigate("/checkout")}
+          onClick={onCheckout}
           style={{
             width: "100%", padding: "16px", borderRadius: 14,
             background: items.length === 0 ? "rgba(255,255,255,0.05)" : "linear-gradient(135deg,#22C55E,#16A34A)",
@@ -696,6 +696,7 @@ export default function MenuPage() {
                 removeFromCart(item.id, item.customizations);
               }}
               onClear={clearCart}
+              onCheckout={() => navigate("/checkout")}
             />
           </div>
         </div>
@@ -734,6 +735,7 @@ export default function MenuPage() {
                   removeFromCart(item.id, item.customizations);
                 }}
                 onClear={clearCart}
+                onCheckout={() => navigate("/checkout")}
               />
             </div>
           </div>
