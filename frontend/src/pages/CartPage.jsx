@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import {
   MdFastfood,
@@ -404,6 +404,7 @@ const EmptyCart = () => (
 
 /* ─── Main CartPage ──────────────────────────────────────────────────── */
 export default function CartPage() {
+  const navigate = useNavigate();
   const { cartItems, cartTotal, updateQuantity, clearCart: clearCartContext, removeFromCart } = useCart();
   const [promo, setPromo] = useState(null); // { code, type, value }
   const [checkingOut, setCheckingOut] = useState(false);
@@ -441,7 +442,7 @@ export default function CartPage() {
     setCheckingOut(true);
     await new Promise(r => setTimeout(r, 1000));
     setCheckingOut(false);
-    window.location.href = "/checkout";
+    navigate("/checkout");
   };
 
   return (

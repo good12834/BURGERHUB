@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "react-query";
 import { useCart } from "../context/CartContext";
 import axios from "axios";
@@ -379,7 +380,7 @@ const CartSidebar = ({ items, onRemove, onClear }) => {
         </div>
         <button
           disabled={items.length === 0}
-          onClick={() => window.location.href = "/checkout"}
+          onClick={() => navigate("/checkout")}
           style={{
             width: "100%", padding: "16px", borderRadius: 14,
             background: items.length === 0 ? "rgba(255,255,255,0.05)" : "linear-gradient(135deg,#22C55E,#16A34A)",
@@ -400,6 +401,7 @@ const CartSidebar = ({ items, onRemove, onClear }) => {
 
 /* ─── Main Page ──────────────────────────────────────────────────────── */
 export default function MenuPage() {
+  const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState("burgers");
   const [search, setSearch] = useState("");
   const { cartItems, addToCart, removeFromCart, clearCart } = useCart();

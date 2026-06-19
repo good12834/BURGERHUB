@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -223,6 +223,7 @@ const CardHead = ({ eyebrow, title }) => (
 /* ─── Main Page ──────────────────────────────────────────────────────── */
 export default function OrderTrackingPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { token } = useAuth();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -401,7 +402,7 @@ export default function OrderTrackingPage() {
         await new Promise(resolve => setTimeout(resolve, 1000));
         alert("Your order has been canceled successfully!");
         // In a real app, you would redirect to the orders page or home
-        window.location.href = "/orders";
+        navigate("/orders");
       } catch (err) {
         setError('Failed to cancel order. Please try again.');
       }
