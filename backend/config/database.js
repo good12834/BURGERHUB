@@ -1,7 +1,23 @@
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
-// Using MySQL database
-const sequelize = new Sequelize({
+
+let sequelize;
+
+if (process.env.DATABASE_URL) {
+  // Render / production
+  sequelize = new Sequelize(process.env.DATABASE_URL, {
+    dialect: 'mysql',
+    logging: false,
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false,
+      },
+    },
+  });
+} else {
+  // Local development
+  sequelize = new Sequelize({
     dialect: 'mysql',
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
@@ -9,9 +25,11 @@ const sequelize = new Sequelize({
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
     logging: false,
-});
-// Test the connection
+  });
+}
+
 sequelize.authenticate()
-    .then(() => console.log(`Database connected successfully (${sequelize.getDialect()} - ${process.env.DB_NAME}@${process.env.DB_HOST}:${process.env.DB_PORT})`))
-    .catch(err => console.error('Unable to connect to database:', err.message));
+  .then(() => console.log(`Database connected successfully (${sequelize.getDialect()})`))
+  .catch(err => console.error('Unable to connect to database:', err.message));
+
 module.exports = sequelize;
