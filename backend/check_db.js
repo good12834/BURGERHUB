@@ -18,5 +18,4 @@ async function checkTables() {
         await sequelize.close();
     }
 }
-
 checkTables();

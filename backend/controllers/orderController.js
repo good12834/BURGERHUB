@@ -44,7 +44,7 @@ const createOrder = async (req, res) => {
             const product = await Product.findByPk(item.product_id);
 
             if (!product) {
-                return res.status(404).json({
+                return res.status(400).json({
                     success: false,
                     message: `Product ${item.product_id} not found`
                 });
@@ -79,7 +79,7 @@ const createOrder = async (req, res) => {
         // Get customer details from database
         const user = await User.findByPk(req.user.id);
         if (!user) {
-            return res.status(404).json({
+            return res.status(400).json({
                 success: false,
                 message: 'User not found'
             });
