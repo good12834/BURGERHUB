@@ -4,7 +4,6 @@ require('dotenv').config();
 let sequelize;
 
 if (process.env.DATABASE_URL) {
-  // Render / production
   sequelize = new Sequelize(process.env.DATABASE_URL, {
     dialect: 'mysql',
     logging: false,
@@ -15,8 +14,13 @@ if (process.env.DATABASE_URL) {
       },
     },
   });
+} else if (process.env.NODE_ENV === 'production') {
+  sequelize = new Sequelize({
+    dialect: 'sqlite',
+    storage: '/tmp/database.sqlite',
+    logging: false,
+  });
 } else {
-  // Local development
   sequelize = new Sequelize({
     dialect: 'mysql',
     host: process.env.DB_HOST,
