@@ -1,6 +1,5 @@
 const { Product, Category } = require('./models');
 const sequelize = require('./config/database');
-
 const UPDATES = [
     { name: "Classic Cheeseburger", img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=800&auto=format&fit=crop" },
     { name: "Double Burger", img: "https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?q=80&w=800&auto=format&fit=crop" },
@@ -18,7 +17,6 @@ const UPDATES = [
     { name: "Chocolate Brownie", img: "https://images.unsplash.com/photo-1624353365286-3f062f74ff1c?q=80&w=800&auto=format&fit=crop" },
     { name: "Apple Pie", img: "https://images.unsplash.com/photo-1568571780765-9276ac8b75a2?q=80&w=800&auto=format&fit=crop" }
 ];
-
 async function updateProducts() {
     try {
         await sequelize.authenticate();

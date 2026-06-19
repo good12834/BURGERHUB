@@ -45,7 +45,14 @@ const driverRoutes = require('./routes/driver.routes');
 
 // Sync database (create tables if they don't exist)
 const sequelize = require('./config/database');
-sequelize.sync({ force: false }) // Use force: true to drop and recreate tables
+const seedDatabase = require('./seed');
+
+sequelize.sync({ force: false })
+    .then(() => {
+        console.log('✅ Database tables synchronized');
+        return seedDatabase();
+    })
+    .catch(err => console.error('Database sync error:', err)); // Use force: true to drop and recreate tables
     .then(() => {
         console.log('✅ Database tables synchronized');
     })
