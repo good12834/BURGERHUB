@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import {
   MdFastfood,
@@ -350,7 +351,7 @@ const EmptyCart = () => (
     <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 15, color: "#57534E", marginTop: 12, maxWidth: 320, lineHeight: 1.6 }}>
       Looks like you haven't added anything yet. Time to fix that.
     </p>
-    <a href="/menu" style={{
+    <Link to="/menu" style={{
       marginTop: 32,
       fontFamily: "'Barlow Condensed', sans-serif",
       fontWeight: 800, fontSize: 16, letterSpacing: "0.1em", textTransform: "uppercase",
@@ -368,7 +369,7 @@ const EmptyCart = () => (
       onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 0 20px rgba(245,158,11,0.3)"; }}
     >
       <MdFastfood size={20} /> Browse Menu
-    </a>
+    </Link>
     {/* Suggested items */}
     <div style={{ marginTop: 60, width: "100%", maxWidth: 500 }}>
       <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 11, letterSpacing: "0.25em", color: "#3D3632", textTransform: "uppercase", marginBottom: 16 }}>
@@ -525,7 +526,7 @@ export default function CartPage() {
               <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 12 }}>
 
                 {/* Back to menu */}
-                <a href="/menu" style={{
+                <Link to="/menu" style={{
                   display: "inline-flex", alignItems: "center", gap: 8,
                   fontFamily: "'Barlow Condensed', sans-serif",
                   fontWeight: 600, fontSize: 13, letterSpacing: "0.08em", textTransform: "uppercase",
@@ -537,7 +538,7 @@ export default function CartPage() {
                   onMouseLeave={e => e.currentTarget.style.color = "#57534E"}
                 >
                   <MdArrowBack size={16} /> Continue Shopping
-                </a>
+                </Link>
 
                 {/* Item list */}
                 {cartItems.map((item, i) => {
@@ -588,7 +589,7 @@ export default function CartPage() {
                       Lava Brownie, Churros, Ice Cream Sandwich — from $4.99
                     </div>
                   </div>
-                  <a href="/menu" style={{
+                  <Link to="/menu" style={{
                     fontFamily: "'Barlow Condensed', sans-serif",
                     fontWeight: 700, fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase",
                     color: "#F59E0B", textDecoration: "none",
@@ -601,7 +602,7 @@ export default function CartPage() {
                     onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                   >
                     Browse <MdArrowForward />
-                  </a>
+                  </Link>
                 </div>
               </div>
 

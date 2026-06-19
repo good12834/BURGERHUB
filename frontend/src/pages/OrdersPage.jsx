@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -435,9 +436,9 @@ export default function OrdersPage() {
             <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: "0.3em", color: "#F59E0B", textTransform: "uppercase", marginBottom: 6 }}>Your Account</div>
             <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 22 }}>
               <h1 style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: "clamp(32px,5vw,52px)", letterSpacing: "0.03em", color: "#F5F5F4", lineHeight: 0.95 }}>My Orders</h1>
-              <a href="/menu" style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, fontSize: 13, letterSpacing: "0.1em", textTransform: "uppercase", textDecoration: "none", color: "#1C1917", background: "linear-gradient(135deg,#F59E0B,#D97706)", padding: "9px 20px", borderRadius: 10, boxShadow: "0 0 16px rgba(245,158,11,0.25)", transition: "all 0.2s", display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Link to="/menu" style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, fontSize: 13, letterSpacing: "0.1em", textTransform: "uppercase", textDecoration: "none", color: "#1C1917", background: "linear-gradient(135deg,#F59E0B,#D97706)", padding: "9px 20px", borderRadius: 10, boxShadow: "0 0 16px rgba(245,158,11,0.25)", transition: "all 0.2s", display: 'flex', alignItems: 'center', gap: 6 }}>
                 <MdArrowForward size={14} /> Order Again
-              </a>
+              </Link>
             </div>
 
             {/* Active orders banner */}
@@ -495,9 +496,9 @@ export default function OrdersPage() {
                 {filter === "all" ? "Place your first order and it'll appear here." : "Try a different filter."}
               </p>
               {filter === "all" && (
-                <a href="/menu" style={{ display: "inline-block", marginTop: 24, fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, fontSize: 14, letterSpacing: "0.1em", textTransform: "uppercase", textDecoration: "none", color: "#1C1917", background: "linear-gradient(135deg,#F59E0B,#D97706)", padding: "12px 28px", borderRadius: 999, boxShadow: "0 0 20px rgba(245,158,11,0.3)", display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Link to="/menu" style={{ display: "inline-block", marginTop: 24, fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, fontSize: 14, letterSpacing: "0.1em", textTransform: "uppercase", textDecoration: "none", color: "#1C1917", background: "linear-gradient(135deg,#F59E0B,#D97706)", padding: "12px 28px", borderRadius: 999, boxShadow: "0 0 20px rgba(245,158,11,0.3)", display: 'flex', alignItems: 'center', gap: 6 }}>
                   <MdArrowForward size={14} /> Browse Menu
-                </a>
+                </Link>
               )}
             </div>
           ) : (

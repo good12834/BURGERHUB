@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { 
   MdFastfood, 
@@ -471,7 +472,7 @@ export default function HomePage() {
                     transform: idx === currentSlide && heroLoaded ? "none" : "translateY(20px)",
                     transition: "all 0.8s 0.8s"
                   }}>
-                    <a href="/menu" style={{
+                    <Link to="/menu" style={{
                       background: "linear-gradient(135deg, #F59E0B, #D97706)",
                       color: "#000",
                       padding: "16px 42px",
@@ -491,7 +492,7 @@ export default function HomePage() {
                     onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
                     >
                       EXPLORE MENU <MdArrowForward />
-                    </a>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -590,12 +591,12 @@ export default function HomePage() {
                   Featured Burgers
                 </h2>
               </div>
-              <a href="/menu" style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 14, letterSpacing: "0.1em", textTransform: "uppercase", color: "#F59E0B", textDecoration: "none", border: "1px solid rgba(245,158,11,0.3)", padding: "10px 22px", borderRadius: 999, transition: "all 0.2s", whiteSpace: "nowrap" }}
+              <Link to="/menu" style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 14, letterSpacing: "0.1em", textTransform: "uppercase", color: "#F59E0B", textDecoration: "none", border: "1px solid rgba(245,158,11,0.3)", padding: "10px 22px", borderRadius: 999, transition: "all 0.2s", whiteSpace: "nowrap" }}
                 onMouseEnter={e => e.currentTarget.style.background = "rgba(245,158,11,0.1)"}
                 onMouseLeave={e => e.currentTarget.style.background = "transparent"}
               >
                 Full Menu <MdArrowForward size={16} />
-              </a>
+              </Link>
             </div>
             <div className="burgers-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 24 }}>
               {BURGERS.map((b, i) => <BurgerCard key={b.id} burger={b} delay={i * 80} />)}
@@ -641,9 +642,9 @@ export default function HomePage() {
                       <span style={{ fontSize: 12, color: "#57534E" }}>copy code</span>
                     </div>
                   )}
-                    <a href="/menu" style={{ marginTop: 8, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 14, letterSpacing: "0.1em", textTransform: "uppercase", color: deal.color, textDecoration: "none", display: "flex", alignItems: "center", gap: 6 }}>
+                    <Link to="/menu" style={{ marginTop: 8, fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 14, letterSpacing: "0.1em", textTransform: "uppercase", color: deal.color, textDecoration: "none", display: "flex", alignItems: "center", gap: 6 }}>
                       Claim Now <MdArrowForward size={16} />
-                    </a>
+                    </Link>
                 </div>
               ))}
             </div>
@@ -711,7 +712,7 @@ export default function HomePage() {
             <p style={{ fontFamily: "'Barlow', sans-serif", fontSize: 18, color: "#78716C", marginBottom: 40 }}>
               Don't think about it. Just order.
             </p>
-            <a href="/menu" style={{
+            <Link to="/menu" style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 800, fontSize: 20, letterSpacing: "0.12em",
               textTransform: "uppercase", textDecoration: "none",
@@ -728,7 +729,7 @@ export default function HomePage() {
               onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 0 40px rgba(245,158,11,0.4)"; }}
             >
               Order Now — Free Delivery <MdDeliveryDining size={24} />
-            </a>
+            </Link>
           </div>
         </section>
 

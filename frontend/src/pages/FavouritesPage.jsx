@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { MdFavorite, MdFavoriteBorder, MdShoppingCart, MdDelete, MdArrowBack, MdCheck, MdGridView, MdList, MdAdd, MdKeyboardArrowLeft } from 'react-icons/md';
 import { FaStar } from 'react-icons/fa';
 import { useCart } from '../context/CartContext';
@@ -171,10 +172,10 @@ const EmptyState = () => (
     <p style={{ fontFamily: "'Barlow',sans-serif", fontSize: 14, color: "#2D2926", maxWidth: 320, lineHeight: 1.7 }}>
       Tap the heart on any menu item to save it here for quick re-ordering.
     </p>
-    <a href="/menu" style={{ marginTop: 12, fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, fontSize: 15, letterSpacing: "0.1em", textTransform: "uppercase", textDecoration: "none", color: "#1C1917", background: "linear-gradient(135deg,#F59E0B,#D97706)", padding: "13px 32px", borderRadius: 999, boxShadow: "0 0 24px rgba(245,158,11,0.35)", transition: "all 0.2s", display: 'flex', alignItems: 'center', gap: 8 }}
+    <Link to="/menu" style={{ marginTop: 12, fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 800, fontSize: 15, letterSpacing: "0.1em", textTransform: "uppercase", textDecoration: "none", color: "#1C1917", background: "linear-gradient(135deg,#F59E0B,#D97706)", padding: "13px 32px", borderRadius: 999, boxShadow: "0 0 24px rgba(245,158,11,0.35)", transition: "all 0.2s", display: 'flex', alignItems: 'center', gap: 8 }}
       onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.04)"; }}
       onMouseLeave={e => { e.currentTarget.style.transform = "none"; }}
-    ><MdArrowBack /> Browse Menu</a>
+    ><MdArrowBack /> Browse Menu</Link>
     {/* Recommended strip */}
     <div style={{ marginTop: 48, width: "100%", maxWidth: 540 }}>
       <div style={{ fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 700, fontSize: 10, letterSpacing: "0.25em", color: "#2D2926", textTransform: "uppercase", marginBottom: 14 }}>You Might Like</div>
@@ -301,10 +302,10 @@ export default function FavouritesPage() {
         <div style={{ background: "linear-gradient(180deg,#1C0A0A 0%,#0C0A09 100%)", borderBottom: "1px solid rgba(255,255,255,0.06)", padding: "40px 40px 0", opacity: pageIn ? 1 : 0, transform: pageIn ? "none" : "translateY(12px)", transition: "all 0.5s 0.1s" }}>
           <div style={{ maxWidth: 1100, margin: "0 auto" }}>
             {/* Breadcrumb */}
-            <a href="/menu" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 600, fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase", color: "#44403C", textDecoration: "none", marginBottom: 16, transition: "color 0.2s" }}
+            <Link to="/menu" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "'Barlow Condensed',sans-serif", fontWeight: 600, fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase", color: "#44403C", textDecoration: "none", marginBottom: 16, transition: "color 0.2s" }}
               onMouseEnter={e => e.currentTarget.style.color = "#F59E0B"}
               onMouseLeave={e => e.currentTarget.style.color = "#44403C"}
-            ><MdKeyboardArrowLeft /> Back to Menu</a>
+            ><MdKeyboardArrowLeft /> Back to Menu</Link>
 
             <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 16, marginBottom: 22 }}>
               <div style={{ display: "flex", alignItems: "flex-end", gap: 16 }}>
