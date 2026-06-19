@@ -52,10 +52,6 @@ sequelize.sync({ force: false })
         console.log('✅ Database tables synchronized');
         return seedDatabase();
     })
-    .catch(err => console.error('Database sync error:', err)); // Use force: true to drop and recreate tables
-    .then(() => {
-        console.log('✅ Database tables synchronized');
-    })
     .catch(err => console.error('Database sync error:', err));
 
 // Use routes
