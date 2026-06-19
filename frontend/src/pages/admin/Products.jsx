@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "react-query";
 import axios from "axios";
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+import API_BASE from '../../config/api';
 const API_URL = `${API_BASE}/api/products`;
 
 // Product image mapping for products with missing local images

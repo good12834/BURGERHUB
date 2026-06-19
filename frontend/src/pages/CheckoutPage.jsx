@@ -46,7 +46,7 @@ import { FaApple, FaGooglePay, FaPaypal } from "react-icons/fa";
 import { SiVisa, SiMastercard, SiAmericanexpress } from "react-icons/si";
 import StripePayment from "../components/StripePayment";
 
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+import API_BASE from '../config/api';
 
 /* ─── Fonts ─────────────────────────────────────────────────────────── */
 const FontLink = () => (

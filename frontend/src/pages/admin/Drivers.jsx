@@ -32,8 +32,7 @@ import {
   MdCancel as MdCancelIcon
 } from 'react-icons/md';
 import axios from 'axios';
-
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+import API_BASE from '../../config/api';
 
 // Status configuration
 const STATUS_CFG = {

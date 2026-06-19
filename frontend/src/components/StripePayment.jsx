@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { useAuth } from "../context/AuthContext";
+import API_BASE from "../config/api";
 
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || "");
 
@@ -23,7 +24,7 @@ const PaymentForm = ({ items, subtotal, delivery, total, onSuccess, orderId }) =
     return sum + (item.quantity * (item.price || item.unit_price || 0));
    }, 0) || 0);
 
-   const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/payment/create-payment-intent`, {
+   const response = await fetch(`${API_BASE}/api/payment/create-payment-intent`, {
     method: 'POST',
     headers: {
      'Content-Type': 'application/json',
@@ -82,7 +83,7 @@ const PaymentForm = ({ items, subtotal, delivery, total, onSuccess, orderId }) =
  // Confirm payment with backend
  const confirmPayment = async (paymentIntentId) => {
   try {
-   const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/payment/confirm`, {
+   const response = await fetch(`${API_BASE}/api/payment/confirm`, {
     method: 'POST',
     headers: {
      'Content-Type': 'application/json',
