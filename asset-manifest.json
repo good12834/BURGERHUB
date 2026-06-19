@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.js": "/BURGERHUB/static/js/main.0139b690.js",
+    "main.js": "/BURGERHUB/static/js/main.e1c716eb.js",
     "index.html": "/BURGERHUB/index.html",
-    "main.0139b690.js.map": "/BURGERHUB/static/js/main.0139b690.js.map"
+    "main.e1c716eb.js.map": "/BURGERHUB/static/js/main.e1c716eb.js.map"
   },
   "entrypoints": [
-    "static/js/main.0139b690.js"
+    "static/js/main.e1c716eb.js"
   ]
 }
