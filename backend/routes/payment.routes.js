@@ -17,6 +17,9 @@ router.post('/refund/:orderId', protect, admin, paymentController.refundPayment)
 // Create a Stripe Checkout session (public)
 router.post('/create-checkout-session', async (req, res) => {
     try {
+        if (!process.env.STRIPE_SECRET_KEY) {
+            return res.status(503).json({ success: false, message: 'Stripe is not configured on this server.' });
+        }
         const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
         const { items, delivery_address, delivery_instructions, success_url, cancel_url, userId } = req.body;
 

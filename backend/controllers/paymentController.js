@@ -1,18 +1,22 @@
 // backend/controllers/paymentController.js
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const Order = require('../models/Order');
 const OrderItem = require('../models/OrderItem');
 const DeliveryTracking = require('../models/DeliveryTracking');
 const User = require('../models/User');
+
+const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
 
 // @desc    Create payment intent
 // @route   POST /api/payment/create-payment-intent
 // @access  Private
 const createPaymentIntent = async (req, res) => {
     try {
-        console.log('DEBUG: Creating payment intent with body:', req.body);
-        console.log('DEBUG: Stripe secret key exists:', !!process.env.STRIPE_SECRET_KEY);
-        console.log('DEBUG: Stripe secret key starts with:', process.env.STRIPE_SECRET_KEY ? process.env.STRIPE_SECRET_KEY.substring(0, 10) + '...' : 'NOT SET');
+        if (!stripe) {
+            return res.status(503).json({
+                success: false,
+                message: 'Stripe is not configured on this server. Please use cash on delivery.'
+            });
+        }
 
         // Handle case where body might not be properly parsed
         if (!req.body || typeof req.body !== 'object') {
@@ -85,7 +89,12 @@ const createPaymentIntent = async (req, res) => {
 // @access  Private
 const confirmPayment = async (req, res) => {
     try {
-        console.log('Confirming payment with body:', req.body);
+        if (!stripe) {
+            return res.status(503).json({
+                success: false,
+                message: 'Stripe is not configured on this server.'
+            });
+        }
 
         // Handle case where body might not be properly parsed
         if (!req.body || typeof req.body !== 'object') {
@@ -158,6 +167,9 @@ const confirmPayment = async (req, res) => {
 // @route   POST /api/payment/webhook
 // @access  Public
 const handleWebhook = async (req, res) => {
+    if (!stripe) {
+        return res.status(503).json({ message: 'Stripe is not configured.' });
+    }
     const sig = req.headers['stripe-signature'];
     let event;
 
@@ -309,6 +321,12 @@ const handleWebhook = async (req, res) => {
 // @access  Private/Admin
 const refundPayment = async (req, res) => {
     try {
+        if (!stripe) {
+            return res.status(503).json({
+                success: false,
+                message: 'Stripe is not configured on this server.'
+            });
+        }
         const { reason } = req.body;
         const order = await Order.findByPk(req.params.orderId);
 

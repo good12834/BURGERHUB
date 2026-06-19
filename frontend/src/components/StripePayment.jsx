@@ -5,7 +5,8 @@ import { Elements, CardElement, useStripe, useElements } from "@stripe/react-str
 import { useAuth } from "../context/AuthContext";
 import API_BASE from "../config/api";
 
-const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || "");
+const STRIPE_KEY = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY;
+const stripePromise = STRIPE_KEY ? loadStripe(STRIPE_KEY) : null;
 
 // Payment form component
 const PaymentForm = ({ items, subtotal, delivery, total, onSuccess, orderId }) => {
@@ -165,18 +166,26 @@ const PaymentForm = ({ items, subtotal, delivery, total, onSuccess, orderId }) =
 
 // Wrapper component with Elements context
 const StripePayment = ({ items, subtotal, delivery, total, onSuccess, orderId }) => {
- return (
-  <Elements stripe={stripePromise}>
-   <PaymentForm
-    items={items}
-    subtotal={subtotal}
-    delivery={delivery}
-    total={total}
-    onSuccess={onSuccess}
-    orderId={orderId}
-   />
-  </Elements>
- );
+  if (!STRIPE_KEY) {
+    return (
+      <div style={{ padding: 20, textAlign: 'center', color: '#F59E0B', background: 'rgba(245,158,11,0.08)', borderRadius: 12, border: '1px solid rgba(245,158,11,0.2)' }}>
+        <p style={{ fontWeight: 600, marginBottom: 8 }}>Stripe payment is not available.</p>
+        <p style={{ fontSize: 13, color: '#A8A29E' }}>Please select "Cash on Delivery" to complete your order.</p>
+      </div>
+    );
+  }
+  return (
+    <Elements stripe={stripePromise}>
+      <PaymentForm
+        items={items}
+        subtotal={subtotal}
+        delivery={delivery}
+        total={total}
+        onSuccess={onSuccess}
+        orderId={orderId}
+      />
+    </Elements>
+  );
 };
 
 export default StripePayment;
